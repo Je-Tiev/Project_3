@@ -23,7 +23,6 @@ public class RegisterRequestDto
     
     [Required]
     public int DepartmentID { get; set; }
-
-    //public UserRole Role { get; set; } = UserRole.ThanhVien;
-    public User.UserRole Role { get; set; } = User.UserRole.NhanVien;
+    
+    // Role không cần truyền vào, mặc định sẽ là User
 }

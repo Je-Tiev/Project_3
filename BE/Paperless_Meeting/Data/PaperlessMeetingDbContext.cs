@@ -20,6 +20,7 @@ public class PaperlessMeetingDbContext : DbContext
     public DbSet<Paperless_Meeting.Models.Poll> Polls { get; set; }
     public DbSet<Paperless_Meeting.Models.User> Users { get; set; }
     public DbSet<Paperless_Meeting.Models.UserVote> UserVotes { get; set; }
+    public DbSet<Paperless_Meeting.Models.RefreshToken> RefreshTokens { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

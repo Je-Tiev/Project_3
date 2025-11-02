@@ -25,7 +25,7 @@ public class User
     [EmailAddress]
     public string Email { get; set; }
 
-    public enum UserRole { LanhDao, NhanVien, KhachMoi }
+    public enum UserRole { SuperAdmin, Admin, User }
     [Required]
     [EnumDataType(typeof(UserRole))]
     public UserRole Role { get; set; }
