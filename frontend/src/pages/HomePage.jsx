@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { useApp } from '../contexts/AppContext';
 import Header from '../components/Header';
+import AdminCreateMeeting from '../components/AdminCreateMeeting';
 import SearchBar from '../components/SearchBar';
 import MeetingTabs from '../components/MeetingTabs';
 import MeetingTable from '../components/MeetingTable';
 
 const HomePage = () => {
-  const { isAuthenticated } = useApp();
+  const { isAuthenticated, currentUser } = useApp();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -23,6 +24,7 @@ const HomePage = () => {
       <Header title="Phòng họp không giấy Đại học Bách khoa Hà Nội" />
       
       <div className="max-w-7xl mx-auto p-6">
+        {currentUser?.role === 'admin' && <AdminCreateMeeting />}
         <SearchBar />
         <MeetingTabs />
         <MeetingTable />
