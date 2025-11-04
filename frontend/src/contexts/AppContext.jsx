@@ -1,5 +1,6 @@
 import { File } from 'lucide-react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { parseDmyToDate } from '../utils/dateUtils';
 
 const AppContext = createContext(null);
 
@@ -107,7 +108,14 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [deviceStatus, setDeviceStatus] = useState('ready');
   const [currentMeeting, setCurrentMeeting] = useState(null);
-  const [meetings, setMeetings] = useState(initialMeetings);
+  const [meetings, setMeetings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('meetings');
+      return saved ? JSON.parse(saved) : initialMeetings;
+    } catch {
+      return initialMeetings;
+    }
+  });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState('not_started');
   const [searchFilters, setSearchFilters] = useState({
@@ -120,6 +128,12 @@ export const AppProvider = ({ children }) => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('meetings', JSON.stringify(meetings));
+    } catch {}
+  }, [meetings]);
 
   const login = (username, password) => {
     if (username && password.length >= 4) {
@@ -152,21 +166,56 @@ export const AppProvider = ({ children }) => {
     setDeviceStatus('ready');
   };
 
+  const createMeeting = (payload) => {
+    // payload: { title, date, time, location, session, organizer, approved, status }
+    const newMeeting = {
+      id: (meetings[0]?.id || 0) + Math.floor(Math.random() * 100000) + 1,
+      date: payload.date,
+      dayOfWeek: payload.dayOfWeek || 'Thứ 2',
+      session: payload.session || 'Buổi sáng',
+      time: payload.time || '08:00',
+      title: payload.title || 'Cuộc họp mới',
+      location: payload.location || 'P 1.1',
+      organizer: payload.organizer || 'Ban tổ chức',
+      file_rev: payload.file_rev || '',
+      file_rev_url: payload.file_rev_url || '',
+      file_pre: payload.file_pre || '',
+      file_pre_url: payload.file_pre_url || '',
+      status: payload.status || 'not_started',
+      approved: typeof payload.approved === 'boolean' ? payload.approved : true,
+      roles: payload.roles || ['Dự họp'],
+      viewStatus: payload.viewStatus || 'Chưa xem'
+    };
+    setMeetings(prev => [newMeeting, ...prev]);
+    return newMeeting;
+  };
+
   const updateSearchFilters = (filters) => {
     setSearchFilters(prev => ({ ...prev, ...filters }));
   };
 
   const getFilteredMeetings = () => {
+    const start = parseDmyToDate(searchFilters.startDate);
+    const end = parseDmyToDate(searchFilters.endDate);
+    const endOfDay = end ? new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999) : null;
+
     return meetings.filter(meeting => {
+      // status tab
       if (activeTab !== 'all' && meeting.status !== activeTab) {
         return false;
       }
+      // approval filter
       if (searchFilters.filterOption === 'approved' && !meeting.approved) {
         return false;
       }
       if (searchFilters.filterOption === 'pending' && meeting.approved) {
         return false;
       }
+      // date range filter (meeting.date is dd/mm/yyyy)
+      const mDate = parseDmyToDate(meeting.date);
+      if (!mDate) return false;
+      if (start && mDate < start) return false;
+      if (endOfDay && mDate > endOfDay) return false;
       return true;
     });
   };
@@ -183,6 +232,7 @@ export const AppProvider = ({ children }) => {
     searchFilters,
     updateSearchFilters,
     getFilteredMeetings,
+    createMeeting,
     login,
     logout,
     startMeeting,

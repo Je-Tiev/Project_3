@@ -58,8 +58,24 @@ const MeetingTable = () => {
                 </td>
                 <td className="px-4 py-4 text-sm">{meeting.location}</td>
                 <td className="px-4 py-4 text-sm">{meeting.organizer}</td>
-                <td className="px-4 py-4 text-sm">{meeting.leader}</td>
-                <td className="px-4 py-4 text-sm">{meeting.preparer}</td>
+                <td className="px-4 py-4 text-sm">
+                  {meeting.file_rev_url ? (
+                    <a href={meeting.file_rev_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                      {meeting.file_rev || 'Tài liệu'}
+                    </a>
+                  ) : (
+                    meeting.file_rev || ''
+                  )}
+                </td>
+                <td className="px-4 py-4 text-sm">
+                  {meeting.file_pre_url ? (
+                    <a href={meeting.file_pre_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                      {meeting.file_pre || 'Tài liệu'}
+                    </a>
+                  ) : (
+                    meeting.file_pre || ''
+                  )}
+                </td>
                 <td className="px-4 py-4">
                   <span className="inline-block bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold mr-1">
                     {meeting.roles[0]}
