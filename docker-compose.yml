@@ -18,7 +18,7 @@ services:
     ports:
       - "5000:5000"  #XOÁ SAU KHI XONG
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development #Sau khi xong => Production
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=project3db;Username=postgres;Password=${DB_PASSWORD};SSL Mode=Require;Trust Server Certificate=true
     depends_on:
       db:
