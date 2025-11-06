@@ -20,6 +20,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development #Sau khi xong => Production
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=project3db;Username=postgres;Password=${DB_PASSWORD};SSL Mode=Require;Trust Server Certificate=true
+    volumes:  #Thêm
+      - aspnet_keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       db:
         condition: service_healthy
@@ -33,3 +35,4 @@ services:
 
 volumes:
   postgres_data:
+  aspnet_keys:  #Thêm
