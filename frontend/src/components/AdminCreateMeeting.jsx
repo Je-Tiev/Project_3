@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '../contexts/AppContext';
 import { dayOfWeekViFromDmy } from '../utils/dateUtils';
 
-const AdminCreateMeeting = () => {
+const AdminCreateMeeting = ({ onClose }) => {
   const { createMeeting } = useApp();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   const [form, setForm] = useState({
     title: '',
@@ -76,6 +76,10 @@ const AdminCreateMeeting = () => {
     });
     if (created) {
       setMessage('Tạo cuộc họp thành công');
+      setTimeout(() => {
+        if (onClose) onClose();
+        setOpen(false);
+      }, 1500);
       setForm({
         title: '',
         date: '',
@@ -173,7 +177,7 @@ const AdminCreateMeeting = () => {
         </label>
         <div className="md:col-span-3 flex items-center gap-3">
           <button type="submit" className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded">Tạo cuộc họp</button>
-          <button type="button" onClick={() => setOpen(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">Đóng</button>
+          <button type="button" onClick={() => { setOpen(false); if (onClose) onClose(); }} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">Đóng</button>
         </div>
       </form>
     </div>
