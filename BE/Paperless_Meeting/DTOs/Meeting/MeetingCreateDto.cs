@@ -6,7 +6,7 @@ public class MeetingCreateDto
 {
     [Required]
     [StringLength(200)]
-    public string Title { get; set; }
+    public required string Title { get; set; }
 
     public string? Description { get; set; }
 
@@ -19,7 +19,5 @@ public class MeetingCreateDto
     [StringLength(200)]
     public string? Location { get; set; }
 
-    [Required]
-    [MinLength(1)]
-    public List<ParticipantDto> Participants { get; set; }
+    public List<ParticipantDto>? Participants { get; set; } = new List<ParticipantDto>();
 }

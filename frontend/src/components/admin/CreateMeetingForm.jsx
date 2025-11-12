@@ -97,35 +97,39 @@ const CreateMeetingForm = ({ onClose, onSave }) => {
     }));
   };
 
-  const handleSave = (asDraft = false) => {
+  const handleSave = async (asDraft = false) => {
     if (!form.title || !form.date || !form.time) {
       setMessage('Please fill in required fields (Title, Date, Time)');
       setTimeout(() => setMessage(''), 3000);
       return;
     }
 
-    const dayOfWeek = dayOfWeekViFromDmy(form.date) || 'Thứ 2';
-    const created = createMeeting({
-      title: form.title,
-      description: form.description,
-      date: form.date,
-      time: form.time,
-      location: form.room,
-      organizer: form.host,
-      session: form.time.includes('AM') || parseInt(form.time.split(':')[0]) < 12 ? 'Buổi sáng' : 'Buổi chiều',
-      status: asDraft ? 'not_started' : 'not_started',
-      approved: !asDraft,
-      dayOfWeek,
-      participants: form.participants,
-      documents: form.documents
-    });
+    try {
+      const result = await createMeeting({
+        title: form.title,
+        description: form.description,
+        date: form.date,
+        time: form.time,
+        location: form.room,
+        organizer: form.host,
+        session: form.time.includes('AM') || parseInt(form.time.split(':')[0]) < 12 ? 'Buổi sáng' : 'Buổi chiều',
+        status: asDraft ? 'not_started' : 'not_started',
+        approved: !asDraft,
+        participants: form.participants,
+        documents: form.documents
+      });
 
-    if (created) {
-      setMessage(asDraft ? 'Saved as draft successfully' : 'Meeting created successfully');
-      setTimeout(() => {
-        if (onSave) onSave();
-        if (onClose) onClose();
-      }, 1500);
+      if (result.success) {
+        setMessage(asDraft ? '✅ Saved as draft successfully' : '✅ Meeting created successfully');
+        setTimeout(() => {
+          if (onSave) onSave();
+          if (onClose) onClose();
+        }, 1500);
+      } else {
+        setMessage('❌ Error: ' + (result.error || 'Failed to create meeting'));
+      }
+    } catch (error) {
+      setMessage('❌ Error: ' + error.message);
     }
   };
 

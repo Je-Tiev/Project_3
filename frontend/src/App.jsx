@@ -9,20 +9,31 @@ import AdminLayout from './pages/admin/AdminLayout';
 const AppContent = () => {
   const { isAuthenticated, currentUser } = useApp();
 
+  // Chưa đăng nhập: hiển thị login page
+  if (!isAuthenticated) {
+    return (
+      <Router>
+        <Route path="/login" component={LoginPage} />
+        <Route path="/" component={LoginPage} />
+      </Router>
+    );
+  }
+
+  // Đã đăng nhập và role = Admin: hiển thị AdminLayout
+  if (currentUser?.role === 'Admin') {
+    return (
+      <Router>
+        <Route path="/admin" component={AdminLayout} />
+        <Route path="/" component={AdminLayout} />
+      </Router>
+    );
+  }
+
+  // Role = User (bình thường): hiển thị HomePage (giao diện user)
   return (
     <Router>
-      <Route path="/login" component={LoginPage} />
-      {isAuthenticated && currentUser?.role === 'admin' ? (
-        <>
-          <Route path="/admin" component={AdminLayout} />
-          <Route path="/" component={AdminLayout} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={HomePage} />
-          <Route path="/meeting/:id" component={MeetingDetailPage} />
-        </>
-      )}
+      <Route path="/" component={HomePage} />
+      <Route path="/meeting/:id" component={MeetingDetailPage} />
     </Router>
   );
 };

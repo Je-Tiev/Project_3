@@ -56,49 +56,56 @@ const AdminCreateMeeting = ({ onClose }) => {
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const dayOfWeek = dayOfWeekViFromDmy(form.date) || 'Thứ 2';
-    // Resolve file_rev
-    let fileRevDisplay = form.file_rev_name || form.file_rev || (form.file_rev_file ? form.file_rev_file.name : '');
-    let fileRevUrl = form.file_rev_link || (form.file_rev_file ? URL.createObjectURL(form.file_rev_file) : '');
-    // Resolve file_pre
-    let filePreDisplay = form.file_pre_name || form.file_pre || (form.file_pre_file ? form.file_pre_file.name : '');
-    let filePreUrl = form.file_pre_link || (form.file_pre_file ? URL.createObjectURL(form.file_pre_file) : '');
+    if (!form.title || !form.date || !form.time) {
+      setMessage('Vui lòng nhập tiêu đề, ngày và giờ');
+      return;
+    }
 
-    const created = createMeeting({
-      ...form,
-      file_rev: fileRevDisplay,
-      file_rev_url: fileRevUrl,
-      file_pre: filePreDisplay,
-      file_pre_url: filePreUrl,
-      dayOfWeek
-    });
-    if (created) {
-      setMessage('Tạo cuộc họp thành công');
-      setTimeout(() => {
-        if (onClose) onClose();
-        setOpen(false);
-      }, 1500);
-      setForm({
-        title: '',
-        date: '',
-        time: '',
-        location: '',
-        session: 'Buổi sáng',
-        organizer: '',
-        file_rev: '',
-        file_rev_link: '',
-        file_rev_file: null,
-        file_rev_name: '',
-        file_pre: '',
-        file_pre_link: '',
-        file_pre_file: null,
-        file_pre_name: '',
-        status: 'not_started',
-        approved: true
+    try {
+      const result = await createMeeting({
+        title: form.title,
+        date: form.date,
+        time: form.time,
+        location: form.location,
+        organizer: form.organizer,
+        session: form.session,
+        status: form.status,
+        approved: form.approved,
+        participants: [] // TODO: Thêm danh sách người tham gia
       });
-      setTimeout(() => setMessage(''), 2000);
+
+      if (result.success) {
+        setMessage('✅ Tạo cuộc họp thành công!');
+        setTimeout(() => {
+          if (onClose) onClose();
+          setOpen(false);
+        }, 1500);
+        setForm({
+          title: '',
+          date: '',
+          time: '',
+          location: '',
+          session: 'Buổi sáng',
+          organizer: '',
+          file_rev: '',
+          file_rev_link: '',
+          file_rev_file: null,
+          file_rev_name: '',
+          file_pre: '',
+          file_pre_link: '',
+          file_pre_file: null,
+          file_pre_name: '',
+          status: 'not_started',
+          approved: true
+        });
+        setTimeout(() => setMessage(''), 2000);
+      } else {
+        setMessage('❌ Lỗi: ' + result.error);
+      }
+    } catch (error) {
+      setMessage('❌ Lỗi tạo cuộc họp: ' + error.message);
     }
   };
 
