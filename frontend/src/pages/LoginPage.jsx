@@ -10,20 +10,23 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login, currentTime } = useApp();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      const result = login(username, password);
+    try {
+      const result = await login(username, password);
       if (result.success) {
         window.location.hash = '/';
       } else {
-        setError(result.message);
+        setError(result.message || 'Đăng nhập thất bại');
       }
+    } catch (err) {
+      setError('Lỗi kết nối: ' + (err.message || 'Không thể kết nối đến server'));
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (

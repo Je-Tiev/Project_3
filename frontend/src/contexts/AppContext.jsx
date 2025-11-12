@@ -1,6 +1,7 @@
 import { File } from 'lucide-react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { parseDmyToDate } from '../utils/dateUtils';
+import { apiCall } from '../utils/api';
 
 const AppContext = createContext(null);
 
@@ -130,24 +131,76 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    // Fetch meetings khi app mount
+    if (isAuthenticated) {
+      fetchMeetings();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     try {
       localStorage.setItem('meetings', JSON.stringify(meetings));
     } catch {}
   }, [meetings]);
 
-  const login = (username, password) => {
-    if (username && password.length >= 4) {
-      const user = {
-        username,
-        role: username === 'admin' ? 'admin' : 'user',
-        fullName: username === 'admin' ? 'Quản Trị Viên' : 'Người Dùng'
+  // src/contexts/AppContext.jsx
+const login = async (username, password) => {
+  try {
+    const response = await apiCall('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+    
+    localStorage.setItem('token', response.token);
+    localStorage.setItem('refreshToken', response.refreshToken);
+    
+    setCurrentUser({
+      username,
+      role: response.role,
+      fullName: response.fullName,
+      userId: response.userId
+    });
+    setIsAuthenticated(true);
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+};
+
+const fetchMeetings = async () => {
+  try {
+    const response = await apiCall('/meetings', { method: 'GET' });
+    // API returns { value: [...], Count: ... }
+    const meetingsList = response.value || response || [];
+    console.log('📥 Fetched meetings from API:', meetingsList.length, 'items');
+    // Convert API format to frontend format
+    const convertedMeetings = meetingsList.map(m => {
+      const startDate = new Date(m.startTime);
+      const dayOfWeek = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][startDate.getDay()];
+      return {
+        id: m.meetingId,
+        title: m.title,
+        description: m.description || '',
+        startTime: m.startTime,
+        endTime: m.endTime,
+        location: m.location || '',
+        status: ['not_started', 'ongoing', 'completed', 'postponed'][m.status] || 'not_started',
+        date: startDate.toLocaleDateString('vi-VN'),
+        dayOfWeek: dayOfWeek,
+        time: startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        organizer: '',
+        file_rev: '',
+        file_pre: '',
+        approved: m.status === 0, // not_started = approved
+        roles: ['Dự họp'],
+        viewStatus: 'Chưa xem'
       };
-      setCurrentUser(user);
-      setIsAuthenticated(true);
-      return { success: true };
-    }
-    return { success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' };
-  };
+    });
+    setMeetings(convertedMeetings);
+  } catch (error) {
+    console.error('❌ Lỗi tải cuộc họp:', error);
+  }
+};
 
   const logout = () => {
     setCurrentUser(null);
@@ -166,28 +219,36 @@ export const AppProvider = ({ children }) => {
     setDeviceStatus('ready');
   };
 
-  const createMeeting = (payload) => {
-    // payload: { title, date, time, location, session, organizer, approved, status }
-    const newMeeting = {
-      id: (meetings[0]?.id || 0) + Math.floor(Math.random() * 100000) + 1,
-      date: payload.date,
-      dayOfWeek: payload.dayOfWeek || 'Thứ 2',
-      session: payload.session || 'Buổi sáng',
-      time: payload.time || '08:00',
-      title: payload.title || 'Cuộc họp mới',
-      location: payload.location || 'P 1.1',
-      organizer: payload.organizer || 'Ban tổ chức',
-      file_rev: payload.file_rev || '',
-      file_rev_url: payload.file_rev_url || '',
-      file_pre: payload.file_pre || '',
-      file_pre_url: payload.file_pre_url || '',
-      status: payload.status || 'not_started',
-      approved: typeof payload.approved === 'boolean' ? payload.approved : true,
-      roles: payload.roles || ['Dự họp'],
-      viewStatus: payload.viewStatus || 'Chưa xem'
-    };
-    setMeetings(prev => [newMeeting, ...prev]);
-    return newMeeting;
+  const createMeeting = async (payload) => {
+    try {
+      // Convert local format to API format (MeetingCreateDto)
+      const [day, month, year] = payload.date.split('/').map(Number);
+      const [hour, minute] = (payload.time || '08:00').split(':').map(Number);
+      
+      const startTime = new Date(year, month - 1, day, hour, minute);
+      const endTime = new Date(year, month - 1, day, hour + 1, minute); // Mặc định +1 giờ
+      
+      const meetingData = {
+        title: payload.title,
+        description: payload.location || '',
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        location: payload.location || '',
+        participants: payload.participants || [] // Cần được populate từ form
+      };
+      
+      const response = await apiCall('/meetings', {
+        method: 'POST',
+        body: JSON.stringify(meetingData)
+      });
+      
+      // Fetch lại meetings từ server
+      await fetchMeetings();
+      return { success: true, data: response };
+    } catch (error) {
+      console.error('Lỗi tạo cuộc họp:', error);
+      return { success: false, error: error.message };
+    }
   };
 
   const updateSearchFilters = (filters) => {
