@@ -1,6 +1,8 @@
 import React from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
-import { Router, Route } from './contexts/RouterContext';
+// Import các component từ react-router-dom
+import { Routes, Route, Navigate } from 'react-router-dom'; 
+
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import MeetingDetailPage from './pages/MeetingDetailPage';
@@ -9,38 +11,50 @@ import AdminLayout from './pages/admin/AdminLayout';
 const AppContent = () => {
   const { isAuthenticated, currentUser } = useApp();
 
-  // Chưa đăng nhập: hiển thị login page
+  // Nếu chưa đăng nhập
   if (!isAuthenticated) {
     return (
-      <Router>
-        <Route path="/login" component={LoginPage} />
-        <Route path="/" component={LoginPage} />
-      </Router>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        {/* Tất cả các đường dẫn khác (vd: "/", "/admin") sẽ tự động chuyển về /login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     );
   }
 
-  // Đã đăng nhập và role = Admin: hiển thị AdminLayout
+  // Nếu đã đăng nhập và là Admin
   if (currentUser?.role === 'Admin') {
     return (
-      <Router>
-        <Route path="/admin" component={AdminLayout} />
-        <Route path="/" component={AdminLayout} />
-      </Router>
+      <Routes>
+        {/* Dùng "/*" để AdminLayout có thể quản lý các route con của nó 
+          (vd: /admin/users, /admin/dashboard)
+        */}
+        <Route path="/admin/*" element={<AdminLayout />} />
+        {/* Tất cả các đường dẫn khác (vd: "/", "/login") sẽ tự động chuyển về /admin */}
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
     );
   }
 
-  // Role = User (bình thường): hiển thị HomePage (giao diện user)
+  // Nếu đã đăng nhập và là User
   return (
-    <Router>
-      <Route path="/" component={HomePage} />
-      <Route path="/meeting/:id" component={MeetingDetailPage} />
-    </Router>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/meeting/:id" element={<MeetingDetailPage />} />
+      {/* Tất cả các đường dẫn không hợp lệ (vd: "/admin", "/login", "/abc") 
+        sẽ tự động chuyển về trang chủ "/" 
+      */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 
 function App() {
   return (
+    // AppProvider vẫn bọc bên ngoài...
     <AppProvider>
+      {/* ...nhưng BrowserRouter đã bọc ở file main.jsx rồi, 
+          nên AppContent chỉ cần chứa Routes là đủ */}
       <AppContent />
     </AppProvider>
   );

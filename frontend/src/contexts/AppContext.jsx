@@ -5,104 +5,104 @@ import { apiCall } from '../utils/api';
 
 const AppContext = createContext(null);
 
-const initialMeetings = [
-  { 
-    id: 1, 
-    date: '07/11/2024',
-    dayOfWeek: 'Thứ 5',
-    session: 'Buổi sáng',
-    time: '08:05',
-    title: 'Cuộc họp kiểm thử 4',
-    location: 'P 3.2',
-    organizer: 'PCT Nguyễn Quang Hùng',
-    file_rev: 'tailieu_nhan_1.pdf',
-    file_pre: 'tailieu_chuanbi_1.pdf',
-    status: 'not_started',
-    approved: true,
-    roles: ['Dự họp'],
-    viewStatus: 'Chưa xem'
-  },
-  { 
-    id: 2, 
-    date: '07/11/2024',
-    dayOfWeek: 'Thứ 5',
-    session: 'Buổi sáng',
-    time: '08:30',
-    title: 'Cuộc họp kiểm thử 3',
-    location: 'P 3.2',
-    organizer: 'PCT Lại Văn Hoàn',
-    file_rev: 'tailieu_nhan_2.pdf',
-    file_pre: 'tailieu_chuanbi_2.pdf',
-    status: 'not_started',
-    approved: true,
-    roles: ['Dự họp'],
-    viewStatus: 'Chưa xem'
-  },
-  { 
-    id: 3, 
-    date: '08/11/2024',
-    dayOfWeek: 'Thứ 6',
-    session: 'Buổi sáng',
-    time: '08:05',
-    title: 'Cuộc họp kiểm thử 5',
-    location: 'P 3.2',
-    organizer: 'PCT Nguyễn Quang Hùng',
-    file_rev: 'tailieu_nhan_3.pdf',
-    file_pre: 'tailieu_chuanbi_3.pdf',
-    status: 'not_started',
-    approved: false,
-    roles: ['Dự họp'],
-    viewStatus: 'Chưa xem'
-  },
-  { 
-    id: 4, 
-    date: '08/11/2024',
-    dayOfWeek: 'Thứ 6',
-    session: 'Buổi chiều',
-    time: '14:00',
-    title: 'Họp Ban Thường vụ',
-    location: 'P 4.1',
-    organizer: 'PCT Trần Văn A',
-    file_rev: 'tailieu_nhan_4.pdf',
-    file_pre: 'Lê Thị C',
-    status: 'ongoing',
-    approved: true,
-    roles: ['Chủ trì'],
-    viewStatus: 'Đã xem'
-  },
-  { 
-    id: 5, 
-    date: '09/11/2024',
-    dayOfWeek: 'Thứ 7',
-    session: 'Buổi sáng',
-    time: '09:00',
-    title: 'Tổng kết nghị quyết 57 BCT',
-    location: 'P 3.2',
-    organizer: 'PCT Phạm Văn D',
-    file_rev: 'tailieu_nhan_5.pdf',
-    file_pre: 'tailieu_chuanbi_5.pdf',
-    status: 'postponed',
-    approved: false,
-    roles: ['Tham gia'],
-    viewStatus: 'Chưa xem'
-  },
-  { 
-    id: 6, 
-    date: '06/11/2024',
-    dayOfWeek: 'Thứ 4',
-    session: 'Buổi sáng',
-    time: '08:00',
-    title: 'Triển khai kế hoạch năm 2026',
-    location: 'P 2.1',
-    organizer: 'PCT Vũ Thị G',
-    file_rev: 'tailieu_nhan_6.pdf',
-    file_pre: 'tailieu_chuanbi_6.pdf',
-    status: 'completed',
-    approved: true,
-    roles: ['Dự họp'],
-    viewStatus: 'Đã xem'
-  }
-];
+// const initialMeetings = [
+//   { 
+//     id: 1, 
+//     date: '07/11/2024',
+//     dayOfWeek: 'Thứ 5',
+//     session: 'Buổi sáng',
+//     time: '08:05',
+//     title: 'Cuộc họp kiểm thử 4',
+//     location: 'P 3.2',
+//     organizer: 'PCT Nguyễn Quang Hùng',
+//     file_rev: 'tailieu_nhan_1.pdf',
+//     file_pre: 'tailieu_chuanbi_1.pdf',
+//     status: 'not_started',
+//     approved: true,
+//     roles: ['Dự họp'],
+//     viewStatus: 'Chưa xem'
+//   },
+//   { 
+//     id: 2, 
+//     date: '07/11/2024',
+//     dayOfWeek: 'Thứ 5',
+//     session: 'Buổi sáng',
+//     time: '08:30',
+//     title: 'Cuộc họp kiểm thử 3',
+//     location: 'P 3.2',
+//     organizer: 'PCT Lại Văn Hoàn',
+//     file_rev: 'tailieu_nhan_2.pdf',
+//     file_pre: 'tailieu_chuanbi_2.pdf',
+//     status: 'not_started',
+//     approved: true,
+//     roles: ['Dự họp'],
+//     viewStatus: 'Chưa xem'
+//   },
+//   { 
+//     id: 3, 
+//     date: '08/11/2024',
+//     dayOfWeek: 'Thứ 6',
+//     session: 'Buổi sáng',
+//     time: '08:05',
+//     title: 'Cuộc họp kiểm thử 5',
+//     location: 'P 3.2',
+//     organizer: 'PCT Nguyễn Quang Hùng',
+//     file_rev: 'tailieu_nhan_3.pdf',
+//     file_pre: 'tailieu_chuanbi_3.pdf',
+//     status: 'not_started',
+//     approved: false,
+//     roles: ['Dự họp'],
+//     viewStatus: 'Chưa xem'
+//   },
+//   { 
+//     id: 4, 
+//     date: '08/11/2024',
+//     dayOfWeek: 'Thứ 6',
+//     session: 'Buổi chiều',
+//     time: '14:00',
+//     title: 'Họp Ban Thường vụ',
+//     location: 'P 4.1',
+//     organizer: 'PCT Trần Văn A',
+//     file_rev: 'tailieu_nhan_4.pdf',
+//     file_pre: 'Lê Thị C',
+//     status: 'ongoing',
+//     approved: true,
+//     roles: ['Chủ trì'],
+//     viewStatus: 'Đã xem'
+//   },
+//   { 
+//     id: 5, 
+//     date: '09/11/2024',
+//     dayOfWeek: 'Thứ 7',
+//     session: 'Buổi sáng',
+//     time: '09:00',
+//     title: 'Tổng kết nghị quyết 57 BCT',
+//     location: 'P 3.2',
+//     organizer: 'PCT Phạm Văn D',
+//     file_rev: 'tailieu_nhan_5.pdf',
+//     file_pre: 'tailieu_chuanbi_5.pdf',
+//     status: 'postponed',
+//     approved: false,
+//     roles: ['Tham gia'],
+//     viewStatus: 'Chưa xem'
+//   },
+//   { 
+//     id: 6, 
+//     date: '06/11/2024',
+//     dayOfWeek: 'Thứ 4',
+//     session: 'Buổi sáng',
+//     time: '08:00',
+//     title: 'Triển khai kế hoạch năm 2026',
+//     location: 'P 2.1',
+//     organizer: 'PCT Vũ Thị G',
+//     file_rev: 'tailieu_nhan_6.pdf',
+//     file_pre: 'tailieu_chuanbi_6.pdf',
+//     status: 'completed',
+//     approved: true,
+//     roles: ['Dự họp'],
+//     viewStatus: 'Đã xem'
+//   }
+// ];
 
 export const AppProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -143,7 +143,23 @@ export const AppProvider = ({ children }) => {
     } catch {}
   }, [meetings]);
 
-  // src/contexts/AppContext.jsx
+  useEffect(() => {
+    // Chạy 1 lần khi app tải
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (token && savedUser) {
+      try {
+        // Khôi phục lại state
+        setCurrentUser(JSON.parse(savedUser));
+        setIsAuthenticated(true);
+      } catch (e) {
+        logout(); // Dọn dẹp nếu data hỏng
+      }
+    }
+  }, []);
+
+// Hàm đăng nhập
 const login = async (username, password) => {
   try {
     const response = await apiCall('/auth/login', {
@@ -154,12 +170,16 @@ const login = async (username, password) => {
     localStorage.setItem('token', response.token);
     localStorage.setItem('refreshToken', response.refreshToken);
     
-    setCurrentUser({
-      username,
+    const user = {
+      username: response.username,
       role: response.role,
       fullName: response.fullName,
       userId: response.userId
-    });
+    };
+    //Lưu user vào localStorage
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    // cập nhật state với user hiện tại
+    setCurrentUser(user);
     setIsAuthenticated(true);
     return { success: true };
   } catch (error) {
@@ -167,6 +187,7 @@ const login = async (username, password) => {
   }
 };
 
+// Hàm lấy danh sách cuộc họp từ API
 const fetchMeetings = async () => {
   try {
     const response = await apiCall('/meetings', { method: 'GET' });
@@ -203,6 +224,10 @@ const fetchMeetings = async () => {
 };
 
   const logout = () => {
+    // Xoá token và user khỏi localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('currentUser');
     setCurrentUser(null);
     setIsAuthenticated(false);
     setCurrentMeeting(null);

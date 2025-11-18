@@ -1,5 +1,5 @@
 // src/utils/api.js
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5075/api';
 
 export const apiCall = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
@@ -20,12 +20,13 @@ export const apiCall = async (endpoint, options = {}) => {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === 401 && endpoint !== '/auth/login') {
         // Token hết hạn - cần refresh hoặc logout
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
-      throw new Error(`HTTP ${response.status}`);
+      const msg = await response.text();
+      throw new Error(msg || `HTTP ${response.status}`);
     }
 
     return await response.json();
