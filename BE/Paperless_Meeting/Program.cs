@@ -2,13 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using AutoMapper;
 using Paperless_Meeting.Data;
 using Paperless_Meeting.Models;
 using Paperless_Meeting.Interfaces.Auth;
 using Paperless_Meeting.Services.Auth;
 using Paperless_Meeting.Interfaces.Meeting;
 using Paperless_Meeting.Services.Meeting;
+using Paperless_Meeting.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +37,9 @@ builder.Services.AddCors(options =>
 // Cấu hình DI cho services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
+builder.Services.AddScoped<IHmsService, HmsService>();
 builder.Services.AddAutoMapper(typeof(Program));
+
 
 // Cấu hình JWT authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,6 +58,40 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddHttpClient<IHmsService, HmsService>((sp, client) =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    client.BaseAddress = new Uri("https://api.100ms.live/v2/");
+    client.DefaultRequestHeaders.Authorization = 
+        new("Bearer", config["Hms:AppAccessKey"]);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+{
+    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+});
+
+// if (builder.Environment.IsDevelopment())
+// {
+//     var handler = new HttpClientHandler()
+//     {
+//         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+//     };
+
+//     var oldFactory = builder.Services.FirstOrDefault(s => s.ServiceType == typeof(IHttpClientFactory));
+//     if (oldFactory != null) builder.Services.Remove(oldFactory);
+
+//     builder.Services.AddHttpClient<IHmsService, HmsService>((sp, client) =>
+// {
+//     var config = sp.GetRequiredService<IConfiguration>();
+//     client.BaseAddress = new Uri("https://api.100ms.live/v2/");
+//     client.DefaultRequestHeaders.Authorization = new("Bearer", config["Hms:AppAccessKey"]);
+// })
+// .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+// {
+//     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+// });
+// }
+// Build app
 var app = builder.Build();
 
 // Tạo database/tables trực tiếp nếu chưa tồn tại (dev helper).
@@ -114,8 +150,8 @@ app.MapGet("/test-db", async (PaperlessMeetingDbContext db) =>
     {
         var canConnect = await db.Database.CanConnectAsync();
         return canConnect 
-            ? Results.Ok("✅ Kết nối đến PostgreSQL thành công!") 
-            : Results.Problem("❌ Không thể kết nối đến database!");
+            ? Results.Ok(" Kết nối đến PostgreSQL thành công!") 
+            : Results.Problem(" Không thể kết nối đến database!");
     }
     catch (Exception ex)
     {
