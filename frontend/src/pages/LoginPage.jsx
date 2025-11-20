@@ -14,14 +14,14 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('--- BẮT ĐẦU handleSubmit ---'); // <-- DEBUG
+    // console.log('--- BẮT ĐẦU handleSubmit ---'); // <-- DEBUG
     setError('');
     setLoading(true);
 
     try {
       // console.log('Đang gọi hàm login() với:', username, password); // <-- DEBUG
       const result = await login(username, password);
-      console.log('Hàm login() trả về:', result); // <-- DEBUG
+      // console.log('Hàm login() trả về:', result); // <-- DEBUG
 
       if (result.success) {
         // console.log('ĐĂNG NHẬP THÀNH CÔNG, đang chuyển hướng...'); // <-- DEBUG

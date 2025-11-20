@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\Paperless_Meeting.props" />
-</Project>

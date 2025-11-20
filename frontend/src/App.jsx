@@ -1,6 +1,5 @@
 import React from 'react';
 import { AppProvider, useApp } from './contexts/AppContext';
-// Import các component từ react-router-dom
 import { Routes, Route, Navigate } from 'react-router-dom'; 
 
 import LoginPage from './pages/LoginPage';
