@@ -18,10 +18,23 @@ namespace Paperless_Meeting.Mappers
             CreateMap<Models.Meeting, MeetingDetailDto>()
                 // Ánh xạ đặc biệt cho danh sách người tham gia
                 .ForMember(dest => dest.Participants,
-                    opt => opt.MapFrom(src => src.Participants.Select(mp => mp.User)));
+                    opt => opt.MapFrom(src => src.Participants.Select(mp => mp.User)))
+                // Ánh xạ danh sách tài liệu
+                .ForMember(dest => dest.Documents,
+                    opt => opt.MapFrom(src => src.Documents.Select(d => new DocumentDto 
+                    { 
+                        FileName = d.FileName, 
+                        FilePath = d.FilePath, 
+                        Visibility = d.Visibility.ToString() 
+                    })));
             
             // Map từ Model sang DTO hiển thị người dùng
             CreateMap<User, UserViewDto>();
+
+            // Map từ Document sang DocumentDto
+            CreateMap<Document, DocumentDto>()
+                .ForMember(dest => dest.Visibility, 
+                    opt => opt.MapFrom(src => src.Visibility.ToString()));
         }
     }
 }

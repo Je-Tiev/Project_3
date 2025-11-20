@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Paperless_Meeting")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+985eaf82ec55bf091a42e52dd1c0ba28c2cc97cb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+915366f128ce8561bbc4a36c7fb94803aaeb4fc4")]
 [assembly: System.Reflection.AssemblyProductAttribute("Paperless_Meeting")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Paperless_Meeting")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
