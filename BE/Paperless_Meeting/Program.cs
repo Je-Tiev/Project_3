@@ -15,14 +15,6 @@ using Paperless_Meeting.Services.Meeting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-<<<<<<< HEAD
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// Cấu hình DbContext với PostgreSQL
-=======
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -57,7 +49,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
->>>>>>> feature/be-meetings-api
 builder.Services.AddDbContext<PaperlessMeetingDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
