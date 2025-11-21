@@ -13,4 +13,5 @@ public class MeetingDetailDto
     public Models.Meeting.MeetingStatus Status { get; set; }
     public int CreatedByUserId { get; set; }
     public List<UserViewDto> Participants { get; set; }
+    public List<DocumentDto>? Documents { get; set; }
 }

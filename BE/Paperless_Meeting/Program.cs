@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AutoMapper;
+using Microsoft.Extensions.FileProviders;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Paperless_Meeting.Models;
 using Paperless_Meeting.Data;
 using Paperless_Meeting.Models;
 using Paperless_Meeting.Interfaces.Auth;
@@ -12,12 +15,49 @@ using Paperless_Meeting.Services.Meeting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+<<<<<<< HEAD
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Cấu hình DbContext với PostgreSQL
+=======
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Cho phép JSON deserialize enum từ string
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()
+        );
+    });
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+});
+>>>>>>> feature/be-meetings-api
 builder.Services.AddDbContext<PaperlessMeetingDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
@@ -36,10 +76,14 @@ builder.Services.AddCors(options =>
 
 // Cấu hình DI cho services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddAutoMapper(typeof(Program));
 
+<<<<<<< HEAD
 // Cấu hình JWT authentication
+=======
+>>>>>>> feature/be-meetings-api
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -100,12 +144,27 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+var uploadPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
+if (!Directory.Exists(uploadPath))
+{
+    Directory.CreateDirectory(uploadPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadPath),
+    RequestPath = "/files",
+    ServeUnknownFileTypes = true
+});
 
 // CORS cần đặt trước Authentication/Authorization
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
+<<<<<<< HEAD
 
 // Test kết nối DB
 app.MapGet("/test-db", async (PaperlessMeetingDbContext db) =>
@@ -123,6 +182,8 @@ app.MapGet("/test-db", async (PaperlessMeetingDbContext db) =>
     }
 });
 
+=======
+>>>>>>> feature/be-meetings-api
 app.MapControllers();
 
 app.Run();
