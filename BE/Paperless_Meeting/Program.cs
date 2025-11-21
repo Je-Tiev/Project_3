@@ -71,10 +71,6 @@ builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddAutoMapper(typeof(Program));
 
-<<<<<<< HEAD
-// Cấu hình JWT authentication
-=======
->>>>>>> feature/be-meetings-api
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -155,26 +151,6 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
-<<<<<<< HEAD
-
-// Test kết nối DB
-app.MapGet("/test-db", async (PaperlessMeetingDbContext db) =>
-{
-    try
-    {
-        var canConnect = await db.Database.CanConnectAsync();
-        return canConnect 
-            ? Results.Ok("✅ Kết nối đến PostgreSQL thành công!") 
-            : Results.Problem("❌ Không thể kết nối đến database!");
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Lỗi: {ex.Message}");
-    }
-});
-
-=======
->>>>>>> feature/be-meetings-api
 app.MapControllers();
 
 app.Run();
