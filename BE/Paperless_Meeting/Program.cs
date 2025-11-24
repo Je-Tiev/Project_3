@@ -2,15 +2,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using AutoMapper;
 using Microsoft.Extensions.FileProviders;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Paperless_Meeting.Models;
 using Paperless_Meeting.Data;
-using Paperless_Meeting.Interfaces.Auth;
+
+using Paperless_Meeting.Repositories.Auth;
+using Paperless_Meeting.Repositories.Document;
+using Paperless_Meeting.Repositories.Meeting;
+using Paperless_Meeting.Repositories.Participant;
+
 using Paperless_Meeting.Services.Auth;
-using Paperless_Meeting.Interfaces.Meeting;
+using Paperless_Meeting.Services.Document;
 using Paperless_Meeting.Services.Meeting;
+using Paperless_Meeting.Services.Participant;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,7 +62,7 @@ builder.Services.AddDbContext<PaperlessMeetingDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddScoped<IParticipantService, ParticipantService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

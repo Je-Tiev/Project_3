@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Paperless_Meeting.DTOs.Meeting;
+namespace Paperless_Meeting.DTOs.Document;
 
 public class DocumentDto
 {

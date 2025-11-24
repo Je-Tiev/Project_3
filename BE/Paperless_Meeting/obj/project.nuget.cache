@@ -1,10 +1,9 @@
 {
   "version": 2,
-  "dgSpecHash": "6J/k3fnC1XE=",
+  "dgSpecHash": "+Ofl6K/qn9c=",
   "success": true,
   "projectFilePath": "C:\\Users\\coc14\\Downloads\\Project3\\Project_3\\BE\\Paperless_Meeting\\Paperless_Meeting.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\coc14\\.nuget\\packages\\automapper\\13.0.1\\automapper.13.0.1.nupkg.sha512",
     "C:\\Users\\coc14\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\coc14\\.nuget\\packages\\humanizer\\2.14.1\\humanizer.2.14.1.nupkg.sha512",
     "C:\\Users\\coc14\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",

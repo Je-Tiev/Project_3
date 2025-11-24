@@ -246,4 +246,3 @@ C:\Users\coc14\Downloads\Project3\Project_3\BE\Paperless_Meeting\bin\Debug\net8.
 C:\Users\coc14\Downloads\Project3\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Drawing.Common.dll
 C:\Users\coc14\Downloads\Project3\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Security.Cryptography.ProtectedData.dll
 C:\Users\coc14\Downloads\Project3\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\runtimes\win\lib\net7.0\System.Windows.Extensions.dll
-C:\Users\coc14\Downloads\Project3\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\AutoMapper.dll

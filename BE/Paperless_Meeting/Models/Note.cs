@@ -14,7 +14,7 @@ public class Note
     public virtual Meeting Meeting { get; set; }
         
     [Required]
-    public int UserID { get; set; }
+    public int UserId { get; set; }
     [ForeignKey("UserId")]
     public virtual User UserNote { get; set; }
         
