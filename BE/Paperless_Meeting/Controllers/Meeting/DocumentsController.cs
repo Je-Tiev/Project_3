@@ -1,168 +1,216 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Paperless_Meeting.DTOs.Meeting;
-using Paperless_Meeting.Interfaces.Meeting;
+using Paperless_Meeting.DTOs.Document;
+using Paperless_Meeting.Repositories.Document;
 using System.Security.Claims;
 
-namespace Paperless_Meeting.Controllers.Meeting
+namespace Paperless_Meeting.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class DocumentController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class DocumentsController : ControllerBase
+    private readonly IDocumentService _documentService;
+    private readonly ILogger<DocumentController> _logger;
+
+    public DocumentController(
+        IDocumentService documentService,
+        ILogger<DocumentController> logger)
     {
-        private readonly IDocumentService _documentService;
+        _documentService = documentService;
+        _logger = logger;
+    }
 
-        public DocumentsController(IDocumentService documentService)
+    /// <summary>
+    /// Upload tài liệu cho cuộc họp
+    /// </summary>
+    /// <param name="meetingId">ID của cuộc họp</param>
+    /// <param name="uploadDto">Thông tin file upload</param>
+    /// <returns>Thông tin tài liệu đã upload</returns>
+    [HttpPost("meeting/{meetingId}")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadDocument(int meetingId, [FromForm] DocumentUploadDto uploadDto)
+    {
+        try
         {
-            _documentService = documentService;
+            var userId = GetCurrentUserId();
+            var document = await _documentService.UploadDocumentAsync(meetingId, uploadDto, userId);
+            
+            return CreatedAtAction(
+                nameof(GetDocumentById),
+                new { id = document.DocumentId },
+                document);
         }
-
-        /// <summary>
-        /// Upload tài liệu cho một cuộc họp
-        /// </summary>
-        /// <param name="meetingId">ID của cuộc họp</param>
-        /// <param name="uploadDto">Thông tin tài liệu cần upload</param>
-        /// <returns>Thông tin tài liệu đã được tải lên</returns>
-        [HttpPost("meeting/{meetingId}")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadDocument(int meetingId, [FromForm] DocumentUploadDto uploadDto)
+        catch (KeyNotFoundException ex)
         {
-            try
-            {
-                if (uploadDto.File == null || uploadDto.File.Length == 0)
-                    return BadRequest("Không có tệp được chọn.");
-
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var document = await _documentService.UploadDocumentAsync(meetingId, uploadDto, userId);
-                
-                return CreatedAtAction(nameof(GetDocument), new { documentId = document.DocumentId }, 
-                    new { message = "Tải lên thành công.", document });
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Lỗi tải lên: {ex.Message}");
-            }
+            _logger.LogWarning(ex.Message);
+            return NotFound(new { message = ex.Message });
         }
-
-        /// <summary>
-        /// Upload nhiều tài liệu cho một cuộc họp
-        /// </summary>
-        /// <param name="meetingId">ID của cuộc họp</param>
-        /// <param name="files">Danh sách file cần upload</param>
-        /// <param name="visibility">Mức độ hiển thị: "Chung" hoặc "NoiBo"</param>
-        /// <returns>Danh sách tài liệu đã được tải lên</returns>
-        [HttpPost("meeting/{meetingId}/batch")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadMultipleDocuments(
-            int meetingId, 
-            [FromForm] List<IFormFile> files,
-            [FromForm] string visibility = "Chung")
+        catch (UnauthorizedAccessException ex)
         {
-            try
-            {
-                if (files == null || files.Count == 0)
-                    return BadRequest("Không có tệp được chọn.");
-
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var uploadedDocuments = new List<object>();
-
-                foreach (var file in files)
-                {
-                    if (file.Length > 0)
-                    {
-                        var uploadDto = new DocumentUploadDto
-                        {
-                            File = file,
-                            FileName = file.FileName,
-                            Visibility = visibility
-                        };
-
-                        try
-                        {
-                            var document = await _documentService.UploadDocumentAsync(meetingId, uploadDto, userId);
-                            uploadedDocuments.Add(document);
-                        }
-                        catch (Exception ex)
-                        {
-                            uploadedDocuments.Add(new { fileName = file.FileName, error = ex.Message });
-                        }
-                    }
-                }
-
-                return Ok(new { 
-                    message = "Quá trình tải lên hoàn tất.", 
-                    uploadedCount = uploadedDocuments.Count, 
-                    documents = uploadedDocuments 
-                });
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Lỗi tải lên: {ex.Message}");
-            }
+            _logger.LogWarning(ex.Message);
+            return Forbid();
         }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi upload document");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi upload tài liệu" });
+        }
+    }
 
-        /// <summary>
-        /// Lấy tất cả tài liệu của một cuộc họp
-        /// </summary>
-        /// <param name="meetingId">ID của cuộc họp</param>
-        /// <returns>Danh sách tài liệu</returns>
-        [HttpGet("meeting/{meetingId}")]
-        public async Task<IActionResult> GetDocumentsByMeeting(int meetingId)
+    /// <summary>
+    /// Xóa tài liệu
+    /// </summary>
+    /// <param name="id">ID của tài liệu</param>
+    /// <returns>Kết quả xóa</returns>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteDocument(int id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _documentService.DeleteDocumentAsync(id, userId);
+            
+            return Ok(new { message = "Xóa tài liệu thành công" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return Forbid();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi xóa document");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi xóa tài liệu" });
+        }
+    }
+
+    /// <summary>
+    /// Lấy danh sách tài liệu của một cuộc họp
+    /// </summary>
+    /// <param name="meetingId">ID của cuộc họp</param>
+    /// <returns>Danh sách tài liệu</returns>
+    [HttpGet("meeting/{meetingId}")]
+    public async Task<IActionResult> GetDocumentsByMeeting(int meetingId)
+    {
+        try
         {
             var documents = await _documentService.GetDocumentsByMeetingAsync(meetingId);
             return Ok(documents);
         }
-
-        /// <summary>
-        /// Lấy thông tin chi tiết của một tài liệu
-        /// </summary>
-        /// <param name="documentId">ID của tài liệu</param>
-        /// <returns>Thông tin tài liệu</returns>
-        [HttpGet("{documentId}")]
-        public async Task<IActionResult> GetDocument(int documentId)
+        catch (Exception ex)
         {
-            var document = await _documentService.GetDocumentByIdAsync(documentId);
+            _logger.LogError(ex, "Lỗi khi lấy danh sách documents");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy danh sách tài liệu" });
+        }
+    }
+
+    /// <summary>
+    /// Lấy thông tin chi tiết một tài liệu
+    /// </summary>
+    /// <param name="id">ID của tài liệu</param>
+    /// <returns>Thông tin tài liệu</returns>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetDocumentById(int id)
+    {
+        try
+        {
+            var document = await _documentService.GetDocumentByIdAsync(id);
+            
             if (document == null)
-                return NotFound("Không tìm thấy tài liệu.");
+            {
+                return NotFound(new { message = "Không tìm thấy tài liệu" });
+            }
             
             return Ok(document);
         }
-
-        /// <summary>
-        /// Xóa một tài liệu
-        /// </summary>
-        /// <param name="documentId">ID của tài liệu</param>
-        /// <returns>Kết quả xóa</returns>
-        [HttpDelete("{documentId}")]
-        public async Task<IActionResult> DeleteDocument(int documentId)
+        catch (Exception ex)
         {
-            try
-            {
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var success = await _documentService.DeleteDocumentAsync(documentId, userId);
-                
-                if (!success)
-                    return NotFound("Không tìm thấy tài liệu.");
-                
-                return NoContent();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Lỗi xóa: {ex.Message}");
-            }
+            _logger.LogError(ex, "Lỗi khi lấy thông tin document");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy thông tin tài liệu" });
         }
+    }
+
+    /// <summary>
+    /// Download tài liệu
+    /// </summary>
+    /// <param name="id">ID của tài liệu</param>
+    /// <returns>File tài liệu</returns>
+    [HttpGet("{id}/download")]
+    public async Task<IActionResult> DownloadDocument(int id)
+    {
+        try
+        {
+            var document = await _documentService.GetDocumentByIdAsync(id);
+            
+            if (document == null)
+            {
+                return NotFound(new { message = "Không tìm thấy tài liệu" });
+            }
+
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", document.FilePath.TrimStart('/'));
+            
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound(new { message = "File không tồn tại trên server" });
+            }
+
+            var memory = new MemoryStream();
+            using (var stream = new FileStream(filePath, FileMode.Open))
+            {
+                await stream.CopyToAsync(memory);
+            }
+            memory.Position = 0;
+
+            var contentType = GetContentType(document.FileName);
+            
+            return File(memory, contentType, document.FileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi download document");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi tải tài liệu" });
+        }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            throw new UnauthorizedAccessException("Không thể xác định user");
+        }
+        return userId;
+    }
+
+    private string GetContentType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xls" => "application/vnd.ms-excel",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".ppt" => "application/vnd.ms-powerpoint",
+            ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ".txt" => "text/plain",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            _ => "application/octet-stream"
+        };
     }
 }

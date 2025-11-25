@@ -1,0 +1,105 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Paperless_Meeting.DTOs.Participant;
+using Paperless_Meeting.Repositories.Participant;
+
+namespace Paperless_Meeting.Controllers.Meeting;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class ParticipantController : ControllerBase
+{
+    private readonly IParticipantService _participantService;
+
+    public ParticipantController(IParticipantService participantService)
+    {
+        _participantService = participantService;
+    }
+
+    /// <summary>
+    /// Lấy danh sách participants của một meeting
+    /// </summary>
+    /// <param name="meetingId">ID của meeting</param>
+    /// <returns>Danh sách participants</returns>
+    [HttpGet("meeting/{meetingId}")]
+    public async Task<IActionResult> GetMeetingParticipants(int meetingId)
+    {
+        try
+        {
+            var participants = await _participantService.GetMeetingParticipantsAsync(meetingId);
+            
+            if (participants == null || !participants.Any())
+            {
+                return Ok(new List<UserViewDto>()); // Trả về danh sách rỗng
+            }
+
+            return Ok(participants);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Có lỗi xảy ra khi lấy danh sách participants", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Thêm participant vào meeting
+    /// </summary>
+    /// <param name="meetingId">ID của meeting</param>
+    /// <param name="participantDto">Thông tin participant</param>
+    /// <returns>Kết quả thêm participant</returns>
+    [HttpPost("meeting/{meetingId}")]
+    public async Task<IActionResult> AddParticipant(int meetingId, [FromBody] ParticipantDto participantDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var result = await _participantService.AddParticipantAsync(
+                meetingId, 
+                participantDto.UserId, 
+                participantDto.RoleInMeeting.ToString()
+            );
+
+            if (!result)
+            {
+                return BadRequest(new { message = "Không thể thêm participant. Có thể meeting/user không tồn tại hoặc participant đã tồn tại." });
+            }
+
+            return Ok(new { message = "Thêm participant thành công" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Có lỗi xảy ra khi thêm participant", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Xóa participant khỏi meeting
+    /// </summary>
+    /// <param name="meetingId">ID của meeting</param>
+    /// <param name="userId">ID của user</param>
+    /// <returns>Kết quả xóa participant</returns>
+    [HttpDelete("meeting/{meetingId}/user/{userId}")]
+    public async Task<IActionResult> RemoveParticipant(int meetingId, int userId)
+    {
+        try
+        {
+            var result = await _participantService.RemoveParticipantAsync(meetingId, userId);
+
+            if (!result)
+            {
+                return NotFound(new { message = "Không tìm thấy participant để xóa" });
+            }
+
+            return Ok(new { message = "Xóa participant thành công" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Có lỗi xảy ra khi xóa participant", error = ex.Message });
+        }
+    }
+}

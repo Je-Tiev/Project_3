@@ -1,4 +1,4 @@
-namespace Paperless_Meeting.DTOs.Meeting;
+namespace Paperless_Meeting.DTOs.Participant;
 
 public class UserViewDto
 {

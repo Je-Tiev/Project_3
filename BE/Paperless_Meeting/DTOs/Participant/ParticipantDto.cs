@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Paperless_Meeting.Models;
 
-namespace Paperless_Meeting.DTOs.Meeting;
+namespace Paperless_Meeting.DTOs.Participant;
 
 public class ParticipantDto
 {

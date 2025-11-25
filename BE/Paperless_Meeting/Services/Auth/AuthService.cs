@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using BCrypt.Net;
 using Paperless_Meeting.Data;
 using Paperless_Meeting.DTOs.Auth;
-using Paperless_Meeting.Interfaces.Auth;
+using Paperless_Meeting.Repositories.Auth;
 using Paperless_Meeting.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -43,7 +43,7 @@ namespace Paperless_Meeting.Services.Auth
                 Email = registerDto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
                 DepartmentId = registerDto.DepartmentID,
-                Role = User.UserRole.User // Mặc định role là User
+                Role = User.UserRole.Admin // Mặc định role là User
             };
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();

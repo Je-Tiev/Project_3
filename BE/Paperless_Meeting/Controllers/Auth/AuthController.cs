@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Paperless_Meeting.DTOs.Auth;
-using Paperless_Meeting.Interfaces.Auth;
+using Paperless_Meeting.Repositories.Auth;
 
-namespace Paperless_Meeting.Controllers
+namespace Paperless_Meeting.Controllers.Auth
 {
     [ApiController]
     [Route("api/[controller]")]

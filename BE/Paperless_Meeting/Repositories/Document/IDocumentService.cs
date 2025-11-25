@@ -1,6 +1,6 @@
-using Paperless_Meeting.DTOs.Meeting;
+using Paperless_Meeting.DTOs.Document;
 
-namespace Paperless_Meeting.Interfaces.Meeting;
+namespace Paperless_Meeting.Repositories.Document;
 
 public interface IDocumentService
 {
