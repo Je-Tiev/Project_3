@@ -1,0 +1,7 @@
+# Ignore .NET build folders
+bin/
+obj/
+
+# Nếu có nhiều project con:
+**/bin/
+**/obj/
