@@ -20,15 +20,38 @@ export const apiCall = async (endpoint, options = {}) => {
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        // Token hết hạn - cần refresh hoặc logout
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+      let errorDetail = `HTTP ${response.status}`;
+      try {
+          const errorData = await response.json(); 
+          errorDetail = errorData.message || JSON.stringify(errorData); 
+      } catch (parseErr) {
+          // Nếu lỗi không phải JSON, thử đọc dưới dạng text
+          try {
+              errorDetail = await response.text();
+          } catch (textErr) {
+              // Giữ nguyên status code
+          }
       }
-      throw new Error(`HTTP ${response.status}`);
+
+      if (response.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+      }
+      throw new Error(errorDetail);
     }
 
-    return await response.json();
+    // >>> BƯỚC KHẮC PHỤC CHÍNH: Kiểm tra Content-Type
+    const contentType = response.headers.get("content-type");
+    
+    // Nếu Content-Type chứa 'application/json', thì đọc JSON
+    if (contentType && contentType.includes("application/json")) {
+      return await response.json();
+    } 
+    
+    // Nếu không phải JSON (là 'text/plain' như trong ảnh), thì đọc Text
+    // Hàm này sẽ trả về chuỗi "Đăng ký thành công."
+    return await response.text(); 
+    
   } catch (error) {
     console.error('API Error:', error);
     throw error;
