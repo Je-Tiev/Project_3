@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Paperless_Meeting.DTOs.Meeting;
-using Paperless_Meeting.Interfaces.Meeting;
+using Paperless_Meeting.Repositories.Meeting;
+using Paperless_Meeting.Models;
 using System.Security.Claims;
 
 namespace Paperless_Meeting.Controllers.Meeting
@@ -35,8 +36,18 @@ namespace Paperless_Meeting.Controllers.Meeting
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateMeeting(MeetingCreateDto createDto)
+        public async Task<IActionResult> CreateMeeting([FromBody] MeetingCreateDto createDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (createDto.StartTime >= createDto.EndTime)
+            {
+                return BadRequest(new { message = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc." });
+            }
+
             var creatorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             
             var createdMeeting = await _meetingService.CreateMeetingAsync(createDto, creatorId);
@@ -45,8 +56,18 @@ namespace Paperless_Meeting.Controllers.Meeting
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMeeting(int id, MeetingCreateDto updateDto)
+        public async Task<IActionResult> UpdateMeeting(int id, [FromBody] MeetingUpdateDto updateDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (updateDto.StartTime >= updateDto.EndTime)
+            {
+                return BadRequest(new { message = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc." });
+            }
+
             var success = await _meetingService.UpdateMeetingAsync(id, updateDto);
             if (!success) return NotFound("Không tìm thấy cuộc họp để cập nhật.");
             

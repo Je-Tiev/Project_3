@@ -18,6 +18,4 @@ public class MeetingCreateDto
 
     [StringLength(200)]
     public string? Location { get; set; }
-
-    public List<ParticipantDto>? Participants { get; set; } = new List<ParticipantDto>();
 }

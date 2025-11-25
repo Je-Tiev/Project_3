@@ -28,5 +28,5 @@ public class MeetingAudio
     [Range(0, double.MaxValue)]
     public float Duration { get; set; }
         
-    public string TranscribedText { get; set; }
+    public string? TranscribedText { get; set; }
 }

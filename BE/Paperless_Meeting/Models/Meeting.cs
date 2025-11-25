@@ -13,7 +13,7 @@ public class Meeting
     public string Title { get; set; }
     
     [StringLength(1000)]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     [Required]
     public DateTime StartTime { get; set; }

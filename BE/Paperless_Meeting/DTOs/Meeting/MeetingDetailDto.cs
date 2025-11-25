@@ -12,5 +12,4 @@ public class MeetingDetailDto
     public string? Location { get; set; }
     public Models.Meeting.MeetingStatus Status { get; set; }
     public int CreatedByUserId { get; set; }
-    public List<UserViewDto> Participants { get; set; }
 }
