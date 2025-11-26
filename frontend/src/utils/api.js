@@ -1,4 +1,4 @@
-// src/utils/api.js
+//src/utils/api.js
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const apiCall = async (endpoint, options = {}) => {
