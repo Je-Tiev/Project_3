@@ -67,6 +67,7 @@ namespace Paperless_Meeting.Controllers.Auth
 
             return Ok("Token đã được thu hồi thành công.");
         }
+
         [HttpGet("users")]
         [Authorize]
         public async Task<IActionResult> GetAllUsers()
@@ -81,6 +82,26 @@ namespace Paperless_Meeting.Controllers.Auth
                 return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy danh sách user", error = ex.Message });
             }
         }
+        
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            try
+            {
+                var user = await _authService.GetUserByIdAsync(id);
 
+                if (user == null)
+                {
+                    return NotFound(new { message = "Người dùng không tồn tại." });
+                }
+
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy thông tin user", error = ex.Message });
+            }
+        }
     }
 }

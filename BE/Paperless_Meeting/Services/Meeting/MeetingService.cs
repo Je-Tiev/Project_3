@@ -36,6 +36,7 @@ namespace Paperless_Meeting.Services.Meeting
         public async Task<MeetingDetailDto?> GetMeetingByIdAsync(int meetingId)
         {
             var meeting = await _context.Meetings
+                .Include(m => m.Creator)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.MeetingId == meetingId);
 
@@ -50,7 +51,8 @@ namespace Paperless_Meeting.Services.Meeting
                 EndTime = meeting.EndTime,
                 Location = meeting.Location,
                 Status = meeting.Status,
-                CreatedByUserId = meeting.CreatedByUserId
+                CreatedByUserId = meeting.CreatedByUserId,
+                CreatedByUserName = meeting.Creator?.FullName
             };
         }
 
@@ -70,6 +72,17 @@ namespace Paperless_Meeting.Services.Meeting
             _context.Meetings.Add(meeting);
             await _context.SaveChangesAsync();
 
+            var creatorParticipant = new MeetingParticipant
+            {
+                MeetingId = meeting.MeetingId,
+                UserId = creatorId,
+                RoleInMeeting = MeetingParticipant.MeetingRole.Host,
+                IsPresent = false
+            };
+
+            _context.MeetingParticipants.Add(creatorParticipant);
+            await _context.SaveChangesAsync();
+
             return new MeetingDetailDto
             {
                 MeetingId = meeting.MeetingId,
@@ -79,7 +92,8 @@ namespace Paperless_Meeting.Services.Meeting
                 EndTime = meeting.EndTime,
                 Location = meeting.Location,
                 Status = meeting.Status,
-                CreatedByUserId = meeting.CreatedByUserId
+                CreatedByUserId = meeting.CreatedByUserId,
+                CreatedByUserName = meeting.Creator?.FullName
             };
         }
 
@@ -113,6 +127,7 @@ namespace Paperless_Meeting.Services.Meeting
         public async Task<IEnumerable<MeetingSummaryDto>> GetAllMeetingsAsync()
         {
             var meetings = await _context.Meetings
+                .Include(m => m.Creator)
                 .Select(m => new MeetingSummaryDto
                 {
                     MeetingId = m.MeetingId,
@@ -120,7 +135,9 @@ namespace Paperless_Meeting.Services.Meeting
                     StartTime = m.StartTime,
                     EndTime = m.EndTime,
                     Location = m.Location,
-                    Status = m.Status
+                    Status = m.Status,
+                    CreatedByUserId = m.CreatedByUserId,
+                    CreatedByUserName = m.Creator.FullName
                 })
                 .AsNoTracking()
                 .ToListAsync();

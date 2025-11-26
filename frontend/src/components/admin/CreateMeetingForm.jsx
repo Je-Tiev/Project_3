@@ -257,19 +257,17 @@ const CreateMeetingForm = ({ onClose, onSave }) => {
       if (finalParticipantsPayload.length > 0) {
         setMessage('Adding participants to meeting...');
         try {
-          const postRes = await apiCall(`/Participant/meeting/${finalMeetingId}`, {
+          const postRes = await apiCall(`/Participant/meeting/${finalMeetingId}/bulk`, {
             method: 'POST',
-            body: JSON.stringify(finalParticipantsPayload)
+            body: JSON.stringify({ participants: finalParticipantsPayload }) 
           });
-          // assume success when no error thrown; you can refine by checking postRes.success
           setMessage('✅ Meeting created and participants added successfully');
         } catch (err) {
           console.error('Error adding participants:', err);
           setMessage('⚠️ Meeting created but failed to add participants.');
         }
-      } else {
-        setMessage('✅ Meeting created (no participants to add).');
       }
+
 
       // finalize
       if (onSave) onSave();

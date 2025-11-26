@@ -1,7 +1,8 @@
 bin/
 obj/
-*.dll
-*.exe
-*.pdb
-*.cache
 *.user
+*.cache
+*.log
+*.dll
+*.pdb
+*.exe
