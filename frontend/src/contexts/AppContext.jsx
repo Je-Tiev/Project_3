@@ -190,7 +190,7 @@ const login = async (username, password) => {
 // Hàm lấy danh sách cuộc họp từ API
 const fetchMeetings = async () => {
   try {
-    const response = await apiCall('/meetings', { method: 'GET' });
+    const response = await apiCall('/Meetings', { method: 'GET' });
     // API returns { value: [...], Count: ... }
     const meetingsList = response.value || response || [];
     console.log('📥 Fetched meetings from API:', meetingsList.length, 'items');

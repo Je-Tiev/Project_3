@@ -1,5 +1,5 @@
 // src/utils/api.js
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5075/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const apiCall = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
@@ -12,7 +12,8 @@ export const apiCall = async (endpoint, options = {}) => {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-
+   const url = `${API_BASE_URL}${endpoint}`;
+  console.log("👉 Calling API URL:", url);
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
