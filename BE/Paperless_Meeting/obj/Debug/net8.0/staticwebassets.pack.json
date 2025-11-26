@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\PC\\Project_3\\BE\\Paperless_Meeting\\wwwroot\\meeting.html",
+      "PackagePath": "staticwebassets\\meeting.html"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Paperless_Meeting.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Paperless_Meeting.props",
+      "PackagePath": "build\\Paperless_Meeting.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Paperless_Meeting.props",
+      "PackagePath": "buildMultiTargeting\\Paperless_Meeting.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Paperless_Meeting.props",
+      "PackagePath": "buildTransitive\\Paperless_Meeting.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

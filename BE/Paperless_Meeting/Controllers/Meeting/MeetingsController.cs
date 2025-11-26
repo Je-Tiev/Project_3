@@ -1,111 +1,166 @@
+// using Microsoft.AspNetCore.Authorization;
+// using Microsoft.AspNetCore.Mvc;
+// using Paperless_Meeting.DTOs.Meeting;
+// using Paperless_Meeting.Interfaces.Meeting;
+// using Paperless_Meeting.Services;
+// using System.Security.Claims;
+
+// namespace Paperless_Meeting.Controllers.Meeting
+// {
+//     [ApiController]
+//     [Route("api/[controller]")]
+//     [Authorize]
+//     public class MeetingsController : ControllerBase
+//     {
+//         private readonly IMeetingService _meetingService;
+//         public MeetingsController(IMeetingService meetingService)
+//         {
+//             _meetingService = meetingService;
+//         }
+
+//         [HttpGet]
+//         public async Task<IActionResult> GetAllMeetings()
+//         {
+//             var meetings = await _meetingService.GetAllMeetingsAsync();
+//             return Ok(meetings);
+//         }
+
+//         [HttpGet("{id}")]
+//         public async Task<IActionResult> GetMeetingById(int id)
+//         {
+//             var meeting = await _meetingService.GetMeetingByIdAsync(id);
+//             if (meeting == null) return NotFound("Không tìm thấy cuộc họp.");
+
+//             return Ok(meeting);
+//         }
+
+//         [HttpPost]
+//         public async Task<IActionResult> CreateMeeting([FromBody] MeetingCreateDto createDto)
+//         {
+//             // Kiểm tra validation errors
+//             if (!ModelState.IsValid)
+//             {
+//                 return BadRequest(ModelState);
+//             }
+
+//             // Kiểm tra participants không được rỗng
+//             if (createDto.Participants == null || createDto.Participants.Count == 0)
+//             {
+//                 return BadRequest(new { message = "Phải có ít nhất 1 người tham gia." });
+//             }
+
+//             // Kiểm tra startTime < endTime
+//             if (createDto.StartTime >= createDto.EndTime)
+//             {
+//                 return BadRequest(new { message = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc." });
+//             }
+
+//             var creatorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+//             var createdMeeting = await _meetingService.CreateMeetingAsync(createDto, creatorId);
+
+//             return CreatedAtAction(nameof(GetMeetingById), new { id = createdMeeting.MeetingId }, createdMeeting);
+//         }
+
+
+//         [HttpPut("{id}")]
+//         public async Task<IActionResult> UpdateMeeting(int id, MeetingCreateDto updateDto)
+//         {
+//             var success = await _meetingService.UpdateMeetingAsync(id, updateDto);
+//             if (!success) return NotFound("Không tìm thấy cuộc họp để cập nhật.");
+
+//             return NoContent(); 
+//         }
+
+//         [HttpDelete("{id}")]
+//         public async Task<IActionResult> DeleteMeeting(int id)
+//         {
+//             var success = await _meetingService.DeleteMeetingAsync(id);
+//             if (!success) return NotFound("Không tìm thấy cuộc họp để xóa.");
+
+//             return NoContent();
+//         }
+
+//     }
+// }
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Paperless_Meeting.DTOs.Meeting;
 using Paperless_Meeting.Interfaces.Meeting;
-using Paperless_Meeting.Services;
 using System.Security.Claims;
+using System.Linq;
+using System;
+using Paperless_Meeting.DTOs.Meeting;
 
-namespace Paperless_Meeting.Controllers.Meeting
+namespace Paperless_Meeting.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/meeting")]
     [Authorize]
-    public class MeetingsController : ControllerBase
+    public class MeetingController : ControllerBase
     {
         private readonly IMeetingService _meetingService;
-        private readonly IHmsService _hmsService;
-        public MeetingsController(IMeetingService meetingService, IHmsService hmsService)
+
+        public MeetingController(IMeetingService meetingService)
         {
             _meetingService = meetingService;
-            _hmsService = hmsService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllMeetings()
+        [HttpPost("create")]
+        public IActionResult CreateRoom()
         {
-            var meetings = await _meetingService.GetAllMeetingsAsync();
-            return Ok(meetings);
+            var roomId = "room-" + Guid.NewGuid().ToString("N")[..10];
+            return Ok(new { roomId });
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetMeetingById(int id)
+        [HttpPost("create-meeting")]
+        public async Task<IActionResult> CreateMeeting([FromBody] MeetingCreateDto createDto)
         {
-            var meeting = await _meetingService.GetMeetingByIdAsync(id);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (createDto.Participants == null || createDto.Participants.Count == 0)
+                return BadRequest(new { message = "Phải có ít nhất 1 người tham gia." });
+
+            var creatorClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(creatorClaim))
+                return Unauthorized("Không xác thực người tạo.");
+
+            var creatorId = int.Parse(creatorClaim);
+            var created = await _meetingService.CreateMeetingAsync(createDto, creatorId);
+
+            return CreatedAtAction(nameof(JoinRoom), new { meetingId = created.MeetingId }, created);
+        }
+
+        [HttpGet("join/{meetingId}")]
+        public async Task<IActionResult> JoinRoom(int meetingId)
+        {
+            // Lấy thông tin cuộc họp (bao gồm danh sách người tham gia)
+            var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
             if (meeting == null) return NotFound("Không tìm thấy cuộc họp.");
-            
-            return Ok(meeting);
-        }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateMeeting(MeetingCreateDto createDto)
-        {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Lấy tên đầy đủ của user từ claim (AuthService đã thêm ClaimTypes.GivenName)
+            var userFullName = User.FindFirstValue(ClaimTypes.GivenName) ?? User.FindFirstValue(ClaimTypes.Name);
+            if (string.IsNullOrWhiteSpace(userFullName))
+                return Forbid("Không xác thực tên người dùng.");
 
-            if(string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int creatorId))
+            // Kiểm tra xem tên user có nằm trong danh sách participants không
+            var allowed = meeting.Participants != null && meeting.Participants.Any(p =>
+                !string.IsNullOrWhiteSpace(p.FullName) &&
+                string.Equals(p.FullName.Trim(), userFullName.Trim(), System.StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (!allowed)
             {
-                return Unauthorized("Không thể xác định người dùng. Vui lòng đăng nhập lại");
+                return Forbid("Bạn không có quyền tham gia cuộc họp này.");
             }
-            
-            var createdMeeting = await _meetingService.CreateMeetingAsync(createDto, creatorId);
-            
-            return CreatedAtAction(nameof(GetMeetingById), new { id = createdMeeting.MeetingId }, createdMeeting);
-        }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMeeting(int id, MeetingCreateDto updateDto)
-        {
-            var success = await _meetingService.UpdateMeetingAsync(id, updateDto);
-            if (!success) return NotFound("Không tìm thấy cuộc họp để cập nhật.");
-            
-            return NoContent(); 
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMeeting(int id)
-        {
-            var success = await _meetingService.DeleteMeetingAsync(id);
-            if (!success) return NotFound("Không tìm thấy cuộc họp để xóa.");
-            
-            return NoContent();
-        }
-        [HttpPost("create-100ms")]
-        public async Task<IActionResult> Create100msMeeting([FromBody] Create100msMeetingDto dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.Title))
-                return BadRequest("Tiêu đề cuộc họp không được để trống.");
-
-            if (dto.Title.Length > 100)
-                return BadRequest("Tiêu đề không được quá 100 ký tự.");
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized("Không xác định được người dùng.");
-
-            var userIdFor100ms = int.TryParse(userIdClaim, out _) 
-                ? userIdClaim 
-                : User.FindFirst(ClaimTypes.Email)?.Value ?? $"user_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
-
-            try
+            var roomId = $"meeting-{meetingId}";
+            return Ok(new
             {
-                var joinUrl = await _hmsService.CreateRoomAndGetJoinUrlAsync(
-                    title: dto.Title.Trim(),
-                    userId: userIdFor100ms,
-                    role: "host" 
-                );
-
-                return Ok(new 
-                { 
-                    Message = "Tạo phòng họp thành công!",
-                    JoinUrl = joinUrl,
-                    RoomTitle = dto.Title
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "Không thể tạo phòng họp. Vui lòng thử lại sau.");
-            }
+                roomId,
+                signalRUrl = "/meetinghub",
+                message = "Kết nối WebRTC thuần qua SignalR"
+            });
         }
-
-        public record Create100msMeetingDto(string Title);
     }
 }

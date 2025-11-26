@@ -8,7 +8,7 @@ using Paperless_Meeting.Interfaces.Auth;
 using Paperless_Meeting.Services.Auth;
 using Paperless_Meeting.Interfaces.Meeting;
 using Paperless_Meeting.Services.Meeting;
-using Paperless_Meeting.Services;
+using Paperless_Meeting.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +28,7 @@ builder.Services.AddDbContext<PaperlessMeetingDbContext>(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("http://localhost:3000", "http://localhost")
+        policy.WithOrigins("http://localhost:3000", "http://localhost", "http://127.0.0.1:5500")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials());
@@ -37,7 +37,7 @@ builder.Services.AddCors(options =>
 // Cấu hình DI cho services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
-builder.Services.AddScoped<IHmsService, HmsService>();
+
 builder.Services.AddAutoMapper(typeof(Program));
 
 
@@ -58,39 +58,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddHttpClient<IHmsService, HmsService>((sp, client) =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    client.BaseAddress = new Uri("https://api.100ms.live/v2/");
-    client.DefaultRequestHeaders.Authorization = 
-        new("Bearer", config["Hms:AppAccessKey"]);
-})
-.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
-{
-    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-});
-
-// if (builder.Environment.IsDevelopment())
-// {
-//     var handler = new HttpClientHandler()
-//     {
-//         ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-//     };
-
-//     var oldFactory = builder.Services.FirstOrDefault(s => s.ServiceType == typeof(IHttpClientFactory));
-//     if (oldFactory != null) builder.Services.Remove(oldFactory);
-
-//     builder.Services.AddHttpClient<IHmsService, HmsService>((sp, client) =>
-// {
-//     var config = sp.GetRequiredService<IConfiguration>();
-//     client.BaseAddress = new Uri("https://api.100ms.live/v2/");
-//     client.DefaultRequestHeaders.Authorization = new("Bearer", config["Hms:AppAccessKey"]);
-// })
-// .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
-// {
-//     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-// });
-// }
+//SignalR
+builder.Services.AddSignalR();
 // Build app
 var app = builder.Build();
 
@@ -136,13 +105,17 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
+app.UseRouting();
 // CORS cần đặt trước Authentication/Authorization
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+//WebRTC
+app.MapHub<MeetingHub>("/meetinghub");  //SignalR Hub
+app.MapControllers(); //API MeetingController
 // Test kết nối DB
 app.MapGet("/test-db", async (PaperlessMeetingDbContext db) =>
 {
@@ -158,7 +131,5 @@ app.MapGet("/test-db", async (PaperlessMeetingDbContext db) =>
         return Results.Problem($"Lỗi: {ex.Message}");
     }
 });
-
-app.MapControllers();
 
 app.Run();

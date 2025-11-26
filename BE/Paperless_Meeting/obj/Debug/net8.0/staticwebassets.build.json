@@ -1,11 +1,39 @@
 {
   "Version": 1,
-  "Hash": "iHAkREPy4sPToJoltG+OhaQABqIIdLQdWbXVdFFeqWA=",
+  "Hash": "xFhMTDxBE5ykvJnYwLpwUKXQ2JDQkLdMAsGEd/UfO4c=",
   "Source": "Paperless_Meeting",
   "BasePath": "_content/Paperless_Meeting",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
+  "DiscoveryPatterns": [
+    {
+      "Name": "Paperless_Meeting\\wwwroot",
+      "Source": "Paperless_Meeting",
+      "ContentRoot": "C:\\Users\\PC\\Project_3\\BE\\Paperless_Meeting\\wwwroot\\",
+      "BasePath": "_content/Paperless_Meeting",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "C:\\Users\\PC\\Project_3\\BE\\Paperless_Meeting\\wwwroot\\meeting.html",
+      "SourceId": "Paperless_Meeting",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\PC\\Project_3\\BE\\Paperless_Meeting\\wwwroot\\",
+      "BasePath": "_content/Paperless_Meeting",
+      "RelativePath": "meeting.html",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\meeting.html"
+    }
+  ]
 }

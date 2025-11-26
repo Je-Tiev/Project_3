@@ -504,3 +504,8 @@ C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\Microsoft.Extensions
 C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
 C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\Microsoft.Extensions.Primitives.dll
 C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\System.Diagnostics.DiagnosticSource.dll
+C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\JWT.dll
+C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
+C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
+C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\System.Net.WebSockets.WebSocketProtocol.dll
+C:\Users\PC\Project_3\BE\Paperless_Meeting\bin\Debug\net8.0\Paperless_Meeting.staticwebassets.runtime.json

@@ -21,25 +21,36 @@ namespace Paperless_Meeting.Services.Meeting
 
         public async Task<MeetingDetailDto> CreateMeetingAsync(MeetingCreateDto createDto, int creatorId)
         {
-            // Dùng AutoMapper để chuyển DTO sang Model
-            var meeting = _mapper.Map<Models.Meeting>(createDto);
-
-            // Gán các giá trị không có trong DTO
-            meeting.CreatedByUserId = creatorId;
-            meeting.Status = Models.Meeting.MeetingStatus.Scheduled;
-
-            // Xử lý danh sách người tham gia
-            meeting.Participants = createDto.Participants
-                .Select(p => new MeetingParticipant
-                {
-                    UserId = p.UserId,
-                    RoleInMeeting = p.RoleInMeeting
-                }).ToList();
+            // Tạo Meeting object thủ công (không dùng AutoMapper để tránh mapping ParticipantDto)
+            var meeting = new Models.Meeting
+            {
+                Title = createDto.Title,
+                Description = createDto.Description,
+                StartTime = createDto.StartTime,
+                EndTime = createDto.EndTime,
+                Location = createDto.Location,
+                CreatedByUserId = creatorId,
+                Status = Models.Meeting.MeetingStatus.Scheduled,
+                Participants = createDto.Participants
+                    .Select((p, index) => new MeetingParticipant
+                    {
+                        UserId = p.UserId,
+                        RoleInMeeting = p.RoleInMeeting,
+                        // Sinh AssignedTask: Role + index
+                        AssignedTask = $"{p.RoleInMeeting}_{index + 1}"
+                    }).ToList()
+            };
 
             await _context.Meetings.AddAsync(meeting);
             await _context.SaveChangesAsync();
 
             // Trả về DTO chi tiết
+            meeting = await _context.Meetings
+                .Include(m => m.Documents)
+                .Include(m => m.Participants)
+                .ThenInclude(mp => mp.User)
+                .FirstAsync(m => m.MeetingId == meeting.MeetingId);
+
             return _mapper.Map<MeetingDetailDto>(meeting);
         }
 
@@ -57,6 +68,7 @@ namespace Paperless_Meeting.Services.Meeting
             var meeting = await _context.Meetings
                 .Include(m => m.Participants) // Nạp danh sách người tham gia
                 .ThenInclude(mp => mp.User) // Từ người tham gia, nạp thông tin User
+                .Include(m => m.Documents) // Nạp danh sách tài liệu
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.MeetingId == meetingId);
 
@@ -73,17 +85,24 @@ namespace Paperless_Meeting.Services.Meeting
 
             if (meeting == null) return false;
 
-            // Dùng AutoMapper để cập nhật các thuộc tính từ DTO vào entity đã có
-            _mapper.Map(updateDto, meeting);
+            // Cập nhật các thuộc tính thủ công (không dùng AutoMapper)
+            meeting.Title = updateDto.Title;
+            meeting.Description = updateDto.Description;
+            meeting.StartTime = updateDto.StartTime;
+            meeting.EndTime = updateDto.EndTime;
+            meeting.Location = updateDto.Location;
 
             // Xử lý cập nhật danh sách người tham gia (xóa cũ, thêm mới)
             meeting.Participants.Clear();
-            foreach (var participantDto in updateDto.Participants)
+            var participantList = updateDto.Participants.ToList();
+            for (int i = 0; i < participantList.Count; i++)
             {
                 meeting.Participants.Add(new MeetingParticipant
                 {
-                    UserId = participantDto.UserId,
-                    RoleInMeeting = participantDto.RoleInMeeting
+                    UserId = participantList[i].UserId,
+                    RoleInMeeting = participantList[i].RoleInMeeting,
+                    // Sinh AssignedTask: Role + index
+                    AssignedTask = $"{participantList[i].RoleInMeeting}_{i + 1}"
                 });
             }
 
