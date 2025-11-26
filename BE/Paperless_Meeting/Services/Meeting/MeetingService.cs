@@ -70,6 +70,17 @@ namespace Paperless_Meeting.Services.Meeting
             _context.Meetings.Add(meeting);
             await _context.SaveChangesAsync();
 
+            var creatorParticipant = new MeetingParticipant
+            {
+                MeetingId = meeting.MeetingId,
+                UserId = creatorId,
+                RoleInMeeting = MeetingParticipant.MeetingRole.Host,
+                IsPresent = false
+            };
+
+            _context.MeetingParticipants.Add(creatorParticipant);
+            await _context.SaveChangesAsync();
+
             return new MeetingDetailDto
             {
                 MeetingId = meeting.MeetingId,

@@ -82,4 +82,97 @@ public class ParticipantService : IParticipantService
 
         return true;
     }
+
+    public async Task<List<AddParticipantResultDto>> AddMultipleParticipantsAsync(int meetingId, List<ParticipantDto> participants)
+    {
+        var results = new List<AddParticipantResultDto>();
+
+        var meetingExists = await _context.Meetings.AnyAsync(m => m.MeetingId == meetingId);
+        if (!meetingExists)
+        {
+            foreach (var participant in participants)
+            {
+                results.Add(new AddParticipantResultDto
+                {
+                    UserId = participant.UserId,
+                    Success = false,
+                    Message = "Meeting không tồn tại"
+                });
+            }
+            return results;
+        }
+
+        var userIds = participants.Select(p => p.UserId).Distinct().ToList();
+
+        var existingUsers = await _context.Users
+            .Where(u => userIds.Contains(u.UserId))
+            .Select(u => u.UserId)
+            .ToListAsync();
+
+        var existingParticipants = await _context.MeetingParticipants
+            .Where(mp => mp.MeetingId == meetingId && userIds.Contains(mp.UserId))
+            .Select(mp => mp.UserId)
+            .ToListAsync();
+
+        var participantsToAdd = new List<MeetingParticipant>();
+
+        foreach (var participant in participants)
+        {
+            if (!existingUsers.Contains(participant.UserId))
+            {
+                results.Add(new AddParticipantResultDto
+                {
+                    UserId = participant.UserId,
+                    Success = false,
+                    Message = "User không tồn tại"
+                });
+                continue;
+            }
+
+            if (existingParticipants.Contains(participant.UserId))
+            {
+                results.Add(new AddParticipantResultDto
+                {
+                    UserId = participant.UserId,
+                    Success = false,
+                    Message = "Participant đã tồn tại trong meeting này"
+                });
+                continue;
+            }
+
+            if (!Enum.TryParse<MeetingParticipant.MeetingRole>(participant.RoleInMeeting.ToString(), true, out var meetingRole))
+            {
+                results.Add(new AddParticipantResultDto
+                {
+                    UserId = participant.UserId,
+                    Success = false,
+                    Message = "Role không hợp lệ"
+                });
+                continue;
+            }
+
+            participantsToAdd.Add(new MeetingParticipant
+            {
+                MeetingId = meetingId,
+                UserId = participant.UserId,
+                RoleInMeeting = meetingRole,
+                IsPresent = false
+            });
+
+            results.Add(new AddParticipantResultDto
+            {
+                UserId = participant.UserId,
+                Success = true,
+                Message = "Thêm thành công"
+            });
+        }
+
+        if (participantsToAdd.Any())
+        {
+            _context.MeetingParticipants.AddRange(participantsToAdd);
+            await _context.SaveChangesAsync();
+        }
+
+        return results;
+    }
 }

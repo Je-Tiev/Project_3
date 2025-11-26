@@ -78,6 +78,46 @@ public class ParticipantController : ControllerBase
     }
 
     /// <summary>
+    /// Thêm nhiều participants vào meeting cùng lúc
+    /// </summary>
+    /// <param name="meetingId">ID của meeting</param>
+    /// <param name="addMultipleDto">Danh sách participants cần thêm</param>
+    /// <returns>Kết quả thêm từng participant (kể cả thành công hay thất bại)</returns>
+    [HttpPost("meeting/{meetingId}/bulk")]
+    public async Task<IActionResult> AddMultipleParticipants(int meetingId, [FromBody] AddMultipleParticipantsDto addMultipleDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var results = await _participantService.AddMultipleParticipantsAsync(meetingId, addMultipleDto.Participants);
+
+            if (results == null || !results.Any())
+            {
+                return BadRequest(new { message = "Không có participants để thêm" });
+            }
+
+            var successCount = results.Count(r => r.Success);
+            var failureCount = results.Count(r => !r.Success);
+
+            return Ok(new
+            {
+                message = $"Hoàn tất: {successCount} thành công, {failureCount} thất bại",
+                successCount,
+                failureCount,
+                details = results
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Có lỗi xảy ra khi thêm participants", error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Xóa participant khỏi meeting
     /// </summary>
     /// <param name="meetingId">ID của meeting</param>
