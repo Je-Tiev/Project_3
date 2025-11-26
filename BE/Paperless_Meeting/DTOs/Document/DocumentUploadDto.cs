@@ -8,9 +8,6 @@ public class DocumentUploadDto
     public IFormFile File { get; set; }
 
     [Required]
-    [StringLength(255)]
-    public string FileName { get; set; }
-
-    [Required]
-    public string Visibility { get; set; } // "Chung" hoặc "NoiBo"
+    [RegularExpression("^(Chung|NoiBo)$")]
+    public string Visibility { get; set; }
 }

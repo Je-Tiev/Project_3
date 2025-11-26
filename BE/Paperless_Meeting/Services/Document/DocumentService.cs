@@ -31,7 +31,6 @@ public class DocumentService : IDocumentService
             throw new KeyNotFoundException($"Meeting với ID {meetingId} không tồn tại");
         }
 
-        // Kiểm tra user có quyền upload không (phải là participant hoặc creator)
         var isParticipant = await _context.MeetingParticipants
             .AnyAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
         
@@ -42,54 +41,76 @@ public class DocumentService : IDocumentService
             throw new UnauthorizedAccessException("Bạn không có quyền upload tài liệu cho cuộc họp này");
         }
 
-        // Validate file
         if (uploadDto.File == null || uploadDto.File.Length == 0)
         {
             throw new ArgumentException("File không hợp lệ");
         }
 
-        // Tạo thư mục lưu trữ nếu chưa có
         var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "documents");
         if (!Directory.Exists(uploadsFolder))
         {
             Directory.CreateDirectory(uploadsFolder);
         }
 
-        // Tạo tên file unique
-        var uniqueFileName = $"{Guid.NewGuid()}_{uploadDto.File.FileName}";
+        var originalFileName = Path.GetFileName(uploadDto.File.FileName);
+        
+        var fileExtension = Path.GetExtension(originalFileName);
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
+        var uniqueFileName = $"{fileNameWithoutExtension}_{Guid.NewGuid()}{fileExtension}";
+        
         var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-        // Lưu file
-        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        try
         {
-            await uploadDto.File.CopyToAsync(fileStream);
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await uploadDto.File.CopyToAsync(fileStream);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lưu file lên server");
+            throw new Exception("Không thể lưu file lên server", ex);
         }
 
-        // Parse visibility
         if (!Enum.TryParse<Models.Document.DocumentVisibility>(uploadDto.Visibility, out var visibility))
         {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
             throw new ArgumentException("Visibility không hợp lệ. Chỉ chấp nhận 'Chung' hoặc 'NoiBo'");
         }
 
-        // Tạo document entity
         var document = new Models.Document
         {
             MeetingId = meetingId,
-            FileName = uploadDto.FileName,
+            FileName = originalFileName,
             FilePath = $"/uploads/documents/{uniqueFileName}",
             Visibility = visibility,
             UploadedBy = userId,
             UploadDate = DateTime.UtcNow
         };
 
-        _context.Documents.Add(document);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.Documents.Add(document);
+            await _context.SaveChangesAsync();
 
-        _logger.LogInformation($"Document {document.DocumentId} uploaded successfully by user {userId}");
+            _logger.LogInformation($"Document {document.DocumentId} uploaded successfully by user {userId}");
 
-        return MapToDto(document);
+            return MapToDto(document);
+        }
+        catch (Exception ex)
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+            _logger.LogError(ex, "Lỗi khi lưu thông tin document vào database");
+            throw new Exception("Không thể lưu thông tin tài liệu vào database", ex);
+        }
     }
-
     public async Task<bool> DeleteDocumentAsync(int documentId, int userId)
     {
         var document = await _context.Documents
@@ -101,7 +122,6 @@ public class DocumentService : IDocumentService
             throw new KeyNotFoundException($"Document với ID {documentId} không tồn tại");
         }
 
-        // Kiểm tra quyền xóa (chỉ người upload hoặc creator của meeting)
         var isUploader = document.UploadedBy == userId;
         var isCreator = document.Meeting.CreatedByUserId == userId;
 
@@ -110,14 +130,12 @@ public class DocumentService : IDocumentService
             throw new UnauthorizedAccessException("Bạn không có quyền xóa tài liệu này");
         }
 
-        // Xóa file vật lý
         var physicalPath = Path.Combine(_environment.WebRootPath, document.FilePath.TrimStart('/'));
         if (File.Exists(physicalPath))
         {
             File.Delete(physicalPath);
         }
 
-        // Xóa record trong database
         _context.Documents.Remove(document);
         await _context.SaveChangesAsync();
 
