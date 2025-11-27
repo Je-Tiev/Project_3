@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 const MeetingDetailPage = () => {
-  const { id } = useParams();
+  const { meetingId } = useParams(); // đổi từ `id` → `meetingId` cho thống nhất với App.js
   const navigate = useNavigate();
   const { meetings, currentUser } = useApp();
   const [meeting, setMeeting] = useState(null);
@@ -25,13 +25,14 @@ const MeetingDetailPage = () => {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    const foundMeeting = meetings.find(m => m.id === parseInt(id));
+    // So sánh id dưới dạng string để tránh mismatch
+    const foundMeeting = meetings.find(m => `${m.id}` === `${meetingId}`);
     if (foundMeeting) {
       setMeeting(foundMeeting);
     } else {
-      navigate('/');
+      navigate('/'); // nếu không tìm thấy → về Home
     }
-  }, [id, meetings, navigate]);
+  }, [meetingId, meetings, navigate]);
 
   const handleSaveNotes = () => {
     alert('Đã lưu ghi chú!');
@@ -55,7 +56,7 @@ const MeetingDetailPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/')} // về trang chủ User
                 className="hover:bg-red-700 p-2 rounded-lg transition-colors"
               >
                 <ArrowLeft size={24} />
@@ -105,7 +106,7 @@ const MeetingDetailPage = () => {
                     {isVideoOn ? <Video size={24} /> : <VideoOff size={24} />}
                   </button>
                   <button 
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/')} // rời cuộc họp → về Home
                     className="px-6 py-4 bg-red-600 hover:bg-red-700 rounded-full font-semibold transition-colors"
                   >
                     Rời cuộc họp

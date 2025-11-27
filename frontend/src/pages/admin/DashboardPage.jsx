@@ -6,6 +6,7 @@ import SummaryCards from '../../components/admin/SummaryCards';
 import MeetingsChart from '../../components/admin/MeetingsChart';
 import ParticipationChart from '../../components/admin/ParticipationChart';
 import MeetingDetailsPage from './MeetingDetailsPage';
+import { useNavigate } from "react-router-dom";
 
 const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
   const { meetings } = useApp();
