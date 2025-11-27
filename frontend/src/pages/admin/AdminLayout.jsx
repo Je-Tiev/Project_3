@@ -46,7 +46,11 @@ const AdminLayout = () => {
           />
         );
       case 'meetings':
-        return <MeetingsListPage />;
+        return (
+          <MeetingsListPage
+            onCreateMeeting={handleCreateMeeting}
+          />
+          );
       case 'rooms':
         return <RoomsPage />;
       case 'users':

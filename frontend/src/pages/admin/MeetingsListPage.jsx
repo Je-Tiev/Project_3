@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Edit, Trash2, FileText, Plus } from 'lucide-react';
 import { apiCall } from '../../utils/api';
+import { useApp } from '../../contexts/AppContext';
 import MeetingDetailsPage from './MeetingDetailsPage';
 
-const MeetingsListPage = () => {
+const MeetingsListPage = ({ onCreateMeeting }) => {
   const [meetings, setMeetings] = useState([]);
   const [filteredMeetings, setFilteredMeetings] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -50,7 +51,7 @@ const formatTime = (iso) => {
           date: formatDate(m.startTime),
           time: formatTime(m.startTime),
           location: m.location || '',
-          organizer: m.createdByUserId || '',
+          organizer: m.createdByUserName || '',
           file_rev: m.file_rev,
           file_pre: m.file_pre,
           status: statusMap[m.status] || 'not_started',
@@ -114,7 +115,9 @@ const formatTime = (iso) => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-text">Meetings List</h1>
-        <button className="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-button font-semibold flex items-center gap-2 transition-colors">
+        <button
+         onClick={onCreateMeeting}
+         className="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-button font-semibold flex items-center gap-2 transition-colors">
           <Plus className="w-5 h-5" /> Create New Meeting
         </button>
       </div>

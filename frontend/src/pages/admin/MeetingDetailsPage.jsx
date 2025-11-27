@@ -1,13 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Users, FileText, Vote, StickyNote, Download, Eye } from 'lucide-react';
-import { useApp } from '../../contexts/AppContext';
+import { apiCall } from '../../utils/api';
 
 const MeetingDetailsPage = ({ meetingId, onBack }) => {
-  const { meetings } = useApp();
+  const [meeting, setMeeting] = useState(null);
+  const [participants, setParticipants] = useState([]);
   const [activeTab, setActiveTab] = useState('agenda');
-  
-  // Find meeting by ID or use first one as demo
-  const meeting = meetings.find(m => m.id === meetingId) || meetings[0] || {};
+
+  // Load chi tiết meeting
+  useEffect(() => {
+    const fetchMeeting = async () => {
+      try {
+        const data = await apiCall(`/Meetings/${meetingId}`, { method: 'GET' });
+        setMeeting({
+          id: data.meetingId,
+          title: data.title,
+          description: data.description,
+          date: new Date(data.startTime).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+          time: new Date(data.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Ho_Chi_Minh' }),
+          location: data.location,
+          status: data.status === 'Scheduled' ? 'not_started' : data.status.toLowerCase(),
+          organizer: data.createdByUserName, // ✅ Host
+          file_rev: data.file_rev,
+          file_rev_url: data.file_rev_url,
+          file_pre: data.file_pre,
+          file_pre_url: data.file_pre_url
+        });
+      } catch (err) {
+        console.error('Lỗi tải thông tin meeting:', err);
+      }
+    };
+    fetchMeeting();
+  }, [meetingId]);
+
+  // Load participants
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const data = await apiCall(`/Participant/meeting/${meetingId}`, { method: 'GET' });
+        setParticipants(data.map(p => ({
+          id: p.userId,
+          name: p.fullName,
+          email: p.email,
+          role: p.fullName === meeting?.organizer ? 'Host' : 'Member',
+          attendance: 'Present' // default, backend chưa trả về attendance
+        })));
+      } catch (err) {
+        console.error('Lỗi tải danh sách participants:', err);
+      }
+    };
+    fetchParticipants();
+  }, [meetingId, meeting?.organizer]);
+
+  if (!meeting) return <p className="text-text-light text-center py-8">Loading meeting...</p>;
 
   const tabs = [
     { key: 'agenda', label: 'Agenda', icon: Calendar },
@@ -15,22 +60,6 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
     { key: 'documents', label: 'Documents', icon: FileText },
     { key: 'voting', label: 'Voting', icon: Vote },
     { key: 'notes', label: 'Notes', icon: StickyNote }
-  ];
-
-  const participants = [
-    { id: 1, name: 'Nguyễn Văn A', role: 'Host', attendance: 'Present' },
-    { id: 2, name: 'Trần Thị B', role: 'Participant', attendance: 'Present' },
-    { id: 3, name: 'Lê Văn C', role: 'Participant', attendance: 'Absent' }
-  ];
-
-  const votingTopics = [
-    { id: 1, topic: 'Approve budget for Q1 2024', agree: 12, disagree: 2, abstain: 1 },
-    { id: 2, topic: 'Hire new staff member', agree: 8, disagree: 5, abstain: 2 }
-  ];
-
-  const notes = [
-    { id: 1, author: 'Nguyễn Văn A', content: 'Important discussion about budget allocation', timestamp: '2024-11-07 10:30' },
-    { id: 2, author: 'Trần Thị B', content: 'Need to follow up on action items', timestamp: '2024-11-07 11:00' }
   ];
 
   return (
@@ -76,18 +105,18 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
           })}
         </div>
 
-        {/* Tab Content */}
         <div className="p-6">
+          {/* Agenda */}
           {activeTab === 'agenda' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-2">Date</label>
-                  <p className="text-text font-medium">{meeting.date || 'N/A'}</p>
+                  <p className="text-text font-medium">{meeting.date}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-2">Time</label>
-                  <p className="text-text font-medium">{meeting.time || 'N/A'}</p>
+                  <p className="text-text font-medium">{meeting.time}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-light mb-2">Location/Room</label>
@@ -116,6 +145,7 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
             </div>
           )}
 
+          {/* Participants */}
           {activeTab === 'participants' && (
             <div className="space-y-4">
               <div className="bg-white border border-secondary-dark rounded-lg overflow-hidden">
@@ -135,9 +165,7 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
                         <td className="px-6 py-4 text-sm">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             p.attendance === 'Present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {p.attendance}
-                          </span>
+                          }`}>{p.attendance}</span>
                         </td>
                       </tr>
                     ))}
@@ -147,6 +175,7 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
             </div>
           )}
 
+          {/* Documents */}
           {activeTab === 'documents' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -155,22 +184,15 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-text">Tài liệu được phát</h3>
                       {meeting.file_rev_url && (
-                        <a
-                          href={meeting.file_rev_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary hover:text-primary-dark flex items-center gap-1 text-sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
+                        <a href={meeting.file_rev_url} target="_blank" rel="noreferrer" className="text-primary hover:text-primary-dark flex items-center gap-1 text-sm">
+                          <Eye className="w-4 h-4" /> View
                         </a>
                       )}
                     </div>
                     <p className="text-sm text-text-light">{meeting.file_rev}</p>
                     {meeting.file_rev_url && (
                       <button className="mt-2 text-primary hover:text-primary-dark flex items-center gap-1 text-sm">
-                        <Download className="w-4 h-4" />
-                        Download
+                        <Download className="w-4 h-4" /> Download
                       </button>
                     )}
                   </div>
@@ -180,22 +202,15 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-text">Tài liệu chuẩn bị</h3>
                       {meeting.file_pre_url && (
-                        <a
-                          href={meeting.file_pre_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary hover:text-primary-dark flex items-center gap-1 text-sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
+                        <a href={meeting.file_pre_url} target="_blank" rel="noreferrer" className="text-primary hover:text-primary-dark flex items-center gap-1 text-sm">
+                          <Eye className="w-4 h-4" /> View
                         </a>
                       )}
                     </div>
                     <p className="text-sm text-text-light">{meeting.file_pre}</p>
                     {meeting.file_pre_url && (
                       <button className="mt-2 text-primary hover:text-primary-dark flex items-center gap-1 text-sm">
-                        <Download className="w-4 h-4" />
-                        Download
+                        <Download className="w-4 h-4" /> Download
                       </button>
                     )}
                   </div>
@@ -207,73 +222,8 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
             </div>
           )}
 
-          {activeTab === 'voting' && (
-            <div className="space-y-4">
-              {votingTopics.map((topic) => (
-                <div key={topic.id} className="bg-secondary border border-secondary-dark rounded-lg p-4">
-                  <h3 className="font-semibold text-text mb-3">{topic.topic}</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-text-light">Agree</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-48 bg-secondary-dark rounded-full h-2">
-                          <div
-                            className="bg-green-600 h-2 rounded-full"
-                            style={{ width: `${(topic.agree / (topic.agree + topic.disagree + topic.abstain)) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-text w-8">{topic.agree}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-text-light">Disagree</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-48 bg-secondary-dark rounded-full h-2">
-                          <div
-                            className="bg-red-600 h-2 rounded-full"
-                            style={{ width: `${(topic.disagree / (topic.agree + topic.disagree + topic.abstain)) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-text w-8">{topic.disagree}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-text-light">Abstain</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-48 bg-secondary-dark rounded-full h-2">
-                          <div
-                            className="bg-gray-400 h-2 rounded-full"
-                            style={{ width: `${(topic.abstain / (topic.agree + topic.disagree + topic.abstain)) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-text w-8">{topic.abstain}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {votingTopics.length === 0 && (
-                <p className="text-text-light text-center py-8">No voting topics for this meeting.</p>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'notes' && (
-            <div className="space-y-4">
-              {notes.map((note) => (
-                <div key={note.id} className="bg-secondary border border-secondary-dark rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-text">{note.author}</span>
-                    <span className="text-sm text-text-light">{note.timestamp}</span>
-                  </div>
-                  <p className="text-text">{note.content}</p>
-                </div>
-              ))}
-              <button className="w-full border-2 border-dashed border-secondary-dark rounded-lg p-4 text-text-light hover:text-text hover:border-primary transition-colors">
-                + Add New Note
-              </button>
-            </div>
-          )}
+          {/* Voting and Notes tabs remain demo for now */}
+          {/* ... */}
         </div>
       </div>
     </div>
@@ -281,4 +231,3 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
 };
 
 export default MeetingDetailsPage;
-
