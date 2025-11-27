@@ -160,6 +160,47 @@ namespace Paperless_Meeting.Services.Auth
             return true;
         }
         
+        public async Task<IEnumerable<UserResponseDto>> GetAllUsersAsync()
+        {
+            var users = await _context.Users
+                .Include(u => u.Department)
+                .ToListAsync();
+
+            return users.Select(u => new UserResponseDto
+            {
+                UserId = u.UserId,
+                FullName = u.FullName,
+                Username = u.Username,
+                Email = u.Email,
+                Role = u.Role.ToString(),
+                DepartmentId = u.DepartmentId,
+                DepartmentName = u.Department?.DepartmentName
+            });
+        }
+        
+        public async Task<UserResponseDto?> GetUserByIdAsync(int userId)
+        {
+            var user = await _context.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserResponseDto
+            {
+                UserId = user.UserId,
+                FullName = user.FullName,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                DepartmentId = user.DepartmentId,
+                DepartmentName = user.Department?.DepartmentName
+            };
+        }
+        
         private string CreateJwtToken(User user, DateTime expiry)
         {
             var claims = new List<Claim>

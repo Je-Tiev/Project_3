@@ -132,36 +132,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// CORS cần đặt trước Authentication/Authorization
-app.UseCors("AllowFrontend");
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// Test kết nối DB
-app.MapGet("/test-db", async (PaperlessMeetingDbContext db) =>
-{
-    try
-    {
-        var canConnect = await db.Database.CanConnectAsync();
-        return canConnect 
-            ? Results.Ok("✅ Kết nối đến PostgreSQL thành công!") 
-            : Results.Problem("❌ Không thể kết nối đến database!");
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Lỗi: {ex.Message}");
-    }
-});
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 var uploadPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
@@ -176,6 +146,9 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/files",
     ServeUnknownFileTypes = true
 });
+
+// CORS cần đặt trước Authentication/Authorization
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
