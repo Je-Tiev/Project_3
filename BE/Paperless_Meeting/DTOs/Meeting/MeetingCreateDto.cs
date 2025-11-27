@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-
+using Paperless_Meeting.DTOs.Participant;
 namespace Paperless_Meeting.DTOs.Meeting;
 
 public class MeetingCreateDto

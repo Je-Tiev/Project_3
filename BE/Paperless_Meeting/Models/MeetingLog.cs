@@ -11,16 +11,16 @@ public class MeetingLog
     [Required]
     public int MeetingId { get; set; }
     [ForeignKey("MeetingId")]
-    public virtual Meeting Meeting { get; set; }
+    public virtual Meeting Meeting { get; set; } = null!;
     
     [Required]
     public int UserId { get; set; }
     [ForeignKey("UserId")]
-    public virtual User UserAction { get; set; }
+    public virtual User UserAction { get; set; } = null!;
 
     [Required]
     [StringLength(100)]
-    public string Action { get; set; }
+    public string Action { get; set; } = string.Empty;
 
     [Required]
     public DateTime ActionTime { get; set; }

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
-using Paperless_Meeting.Interfaces.Meeting;
+using Paperless_Meeting.Repositories.Meeting;
 using System.Security.Claims;
 using System.Linq;
 using System;
@@ -15,7 +15,7 @@ namespace Paperless_Meeting.Hubs
             _meetingService = meetingService;
         }
 
-        // Join by meetingId (server will validate participant list)
+        // CHỨC NĂNG THAM GIA PHÒNG HỌP
         public async Task JoinRoom(int meetingId)
         {
             var userFullName = Context.User?.FindFirst(ClaimTypes.GivenName)?.Value

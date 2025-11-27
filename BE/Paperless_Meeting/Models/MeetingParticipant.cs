@@ -5,21 +5,20 @@ namespace Paperless_Meeting.Models;
 
 public class MeetingParticipant
 {
-    [Required]
-    [Key]
+    public int MeetingParticipantId { get; set; }
     public int MeetingId { get; set; }
-    [ForeignKey("MeetingId")]
-    public virtual Meeting Meeting { get; set; }
-
-    [Required]
+    
     public int UserId { get; set; }
-    [ForeignKey("UserId")]
-    public virtual User User { get; set; }
-    
-    public bool IsPresent { get; set; } = false;
-    
-    public string AssignedTask { get; set; }
 
-    public enum MeetingRole { Host, Member, Guest }
-    public MeetingRole RoleInMeeting  { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string AssignedTask { get; set; } = string.Empty;
+
+    public bool IsPresent { get; set; } = false;
+    public MeetingRole RoleInMeeting { get; set; } = MeetingRole.Participant;
+
+    public enum MeetingRole { Host = 1, Secretary = 2, Participant = 3 }
+    
+    [ForeignKey("MeetingId")]
+    public Meeting Meeting { get; set; } = null!;
+    public User User { get; set; } = null!;
 }

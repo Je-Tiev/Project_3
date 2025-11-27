@@ -9,7 +9,7 @@ public class Department
     
     [Required]
     [StringLength(100)]
-    public string DepartmentName { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
     
-    public virtual ICollection<User> Members { get; set; }
+    public virtual ICollection<User> Members { get; set; } = new List<User>();
 }

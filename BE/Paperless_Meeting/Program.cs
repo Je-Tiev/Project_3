@@ -4,10 +4,12 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Paperless_Meeting.Data;
 using Paperless_Meeting.Models;
-using Paperless_Meeting.Interfaces.Auth;
+using Paperless_Meeting.Repositories.Auth;
 using Paperless_Meeting.Services.Auth;
-using Paperless_Meeting.Interfaces.Meeting;
+using Paperless_Meeting.Repositories.Meeting;
 using Paperless_Meeting.Services.Meeting;
+using Paperless_Meeting.Repositories.Participant;
+using Paperless_Meeting.Services.Participant;
 using Paperless_Meeting.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,7 +39,7 @@ builder.Services.AddCors(options =>
 // Cấu hình DI cho services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
-
+builder.Services.AddScoped<IParticipantService, ParticipantService>();
 builder.Services.AddAutoMapper(typeof(Program));
 
 
@@ -70,7 +72,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<PaperlessMeetingDbContext>();
     // Nếu muốn dùng migrations thực sự, thay EnsureCreated bằng Migrate() và
     // đảm bảo migrations được tạo bằng `dotnet ef migrations add`.
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
     // Seed initial users for development if none exist
     if (!db.Users.Any())
     {

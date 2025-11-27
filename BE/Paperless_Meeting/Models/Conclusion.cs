@@ -11,15 +11,15 @@ public class Conclusion
     [Required]
     public int MeetingId { get; set; }
     [ForeignKey("MeetingId")]
-    public virtual Meeting Meeting { get; set; }
+    public virtual Meeting Meeting { get; set; } = null!;
     
     [Required]
     public int ConclusionByUserId { get; set; }
     [ForeignKey("ConclusionByUserId")]
-    public virtual User Creator { get; set; }
+    public virtual User Creator { get; set; } = null!;
 
     [Required]
-    public string Summary { get; set; }
+    public string Summary { get; set; } = string.Empty;
         
     [Required]
     public DateTime CreatedAt { get; set; }

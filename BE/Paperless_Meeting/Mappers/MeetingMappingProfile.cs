@@ -1,7 +1,7 @@
 using AutoMapper;
 using Paperless_Meeting.DTOs.Meeting;
 using Paperless_Meeting.Models;
-
+using Paperless_Meeting.DTOs.Participant;
 namespace Paperless_Meeting.Mappers
 {
     public class MeetingMappingProfile : Profile

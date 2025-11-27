@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Paperless_Meeting.DTOs.Auth;
-using Paperless_Meeting.Interfaces.Auth;
+using Paperless_Meeting.Repositories.Auth;
 
-namespace Paperless_Meeting.Controllers
+namespace Paperless_Meeting.Controllers.Auth
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -65,6 +66,21 @@ namespace Paperless_Meeting.Controllers
             }
 
             return Ok("Token đã được thu hồi thành công.");
+        }
+
+        [HttpGet("users")]
+        [Authorize]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            try
+            {
+                var users = await _authService.GetAllUsersAsync();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy danh sách user", error = ex.Message });
+            }
         }
     }
 }

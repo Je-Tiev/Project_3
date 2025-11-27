@@ -1,7 +1,10 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
+
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
 namespace Paperless_Meeting.Migrations
 {
@@ -34,7 +37,7 @@ namespace Paperless_Meeting.Migrations
                     Username = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Role = table.Column<string>(type: "text", nullable: false),
+                    Role = table.Column<int>(type: "integer", nullable: false),
                     DepartmentId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -55,12 +58,12 @@ namespace Paperless_Meeting.Migrations
                     MeetingId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Location = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     CreatedByUserId = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false)
+                    Status = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -77,16 +80,17 @@ namespace Paperless_Meeting.Migrations
                 name: "RefreshTokens",
                 columns: table => new
                 {
-                    RefreshTokenId = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
                     Token = table.Column<string>(type: "text", nullable: false),
-                    ExpiryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsRevoked = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RefreshTokens", x => x.RefreshTokenId);
+                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                     table.ForeignKey(
                         name: "FK_RefreshTokens_Users_UserId",
                         column: x => x.UserId,
@@ -102,7 +106,9 @@ namespace Paperless_Meeting.Migrations
                     ConclusionId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MeetingId = table.Column<int>(type: "integer", nullable: false),
-                    Content = table.Column<string>(type: "text", nullable: false)
+                    ConclusionByUserId = table.Column<int>(type: "integer", nullable: false),
+                    Summary = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -113,6 +119,12 @@ namespace Paperless_Meeting.Migrations
                         principalTable: "Meetings",
                         principalColumn: "MeetingId",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Conclusions_Users_ConclusionByUserId",
+                        column: x => x.ConclusionByUserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -122,10 +134,11 @@ namespace Paperless_Meeting.Migrations
                     DocumentId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MeetingId = table.Column<int>(type: "integer", nullable: false),
-                    DocumentType = table.Column<string>(type: "text", nullable: false),
                     FileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    FilePath = table.Column<string>(type: "text", nullable: false),
-                    UploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    FilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Visibility = table.Column<int>(type: "integer", nullable: false),
+                    UploadedBy = table.Column<int>(type: "integer", nullable: false),
+                    UploadDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -136,27 +149,41 @@ namespace Paperless_Meeting.Migrations
                         principalTable: "Meetings",
                         principalColumn: "MeetingId",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Documents_Users_UploadedBy",
+                        column: x => x.UploadedBy,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "MeetingAudios",
                 columns: table => new
                 {
-                    MeetingAudioId = table.Column<int>(type: "integer", nullable: false)
+                    AudioId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MeetingId = table.Column<int>(type: "integer", nullable: false),
-                    AudioFileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    AudioFilePath = table.Column<string>(type: "text", nullable: false),
-                    RecordedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    AudioPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Duration = table.Column<float>(type: "real", nullable: false),
+                    TranscribedText = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MeetingAudios", x => x.MeetingAudioId);
+                    table.PrimaryKey("PK_MeetingAudios", x => x.AudioId);
                     table.ForeignKey(
                         name: "FK_MeetingAudios_Meetings_MeetingId",
                         column: x => x.MeetingId,
                         principalTable: "Meetings",
                         principalColumn: "MeetingId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MeetingAudios_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -164,21 +191,27 @@ namespace Paperless_Meeting.Migrations
                 name: "MeetingLogs",
                 columns: table => new
                 {
-                    MeetingLogId = table.Column<int>(type: "integer", nullable: false)
+                    LogId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MeetingId = table.Column<int>(type: "integer", nullable: false),
-                    Action = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Details = table.Column<string>(type: "text", nullable: true)
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ActionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MeetingLogs", x => x.MeetingLogId);
+                    table.PrimaryKey("PK_MeetingLogs", x => x.LogId);
                     table.ForeignKey(
                         name: "FK_MeetingLogs_Meetings_MeetingId",
                         column: x => x.MeetingId,
                         principalTable: "Meetings",
                         principalColumn: "MeetingId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MeetingLogs_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -188,9 +221,9 @@ namespace Paperless_Meeting.Migrations
                 {
                     MeetingId = table.Column<int>(type: "integer", nullable: false),
                     UserId = table.Column<int>(type: "integer", nullable: false),
-                    ParticipationStatus = table.Column<string>(type: "text", nullable: false),
-                    JoinedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    LeftAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    IsPresent = table.Column<bool>(type: "boolean", nullable: false),
+                    AssignedTask = table.Column<string>(type: "text", nullable: false),
+                    RoleInMeeting = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -216,6 +249,7 @@ namespace Paperless_Meeting.Migrations
                     NoteId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MeetingId = table.Column<int>(type: "integer", nullable: false),
+                    UserID = table.Column<int>(type: "integer", nullable: false),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -244,7 +278,9 @@ namespace Paperless_Meeting.Migrations
                     PollId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MeetingId = table.Column<int>(type: "integer", nullable: false),
-                    Question = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    VoteByUserId = table.Column<int>(type: "integer", nullable: false),
+                    Question = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -256,22 +292,28 @@ namespace Paperless_Meeting.Migrations
                         principalTable: "Meetings",
                         principalColumn: "MeetingId",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Polls_Users_VoteByUserId",
+                        column: x => x.VoteByUserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "UserVotes",
                 columns: table => new
                 {
-                    UserVoteId = table.Column<int>(type: "integer", nullable: false)
+                    VoteId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
                     PollId = table.Column<int>(type: "integer", nullable: false),
-                    VoteValue = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Choice = table.Column<bool>(type: "boolean", nullable: false),
                     VotedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserVotes", x => x.UserVoteId);
+                    table.PrimaryKey("PK_UserVotes", x => x.VoteId);
                     table.ForeignKey(
                         name: "FK_UserVotes_Polls_PollId",
                         column: x => x.PollId,
@@ -299,6 +341,11 @@ namespace Paperless_Meeting.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Conclusions_ConclusionByUserId",
+                table: "Conclusions",
+                column: "ConclusionByUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Conclusions_MeetingId",
                 table: "Conclusions",
                 column: "MeetingId");
@@ -309,14 +356,29 @@ namespace Paperless_Meeting.Migrations
                 column: "MeetingId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Documents_UploadedBy",
+                table: "Documents",
+                column: "UploadedBy");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MeetingAudios_MeetingId",
                 table: "MeetingAudios",
                 column: "MeetingId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MeetingAudios_UserId",
+                table: "MeetingAudios",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MeetingLogs_MeetingId",
                 table: "MeetingLogs",
                 column: "MeetingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MeetingLogs_UserId",
+                table: "MeetingLogs",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MeetingParticipants_UserId",
@@ -344,6 +406,11 @@ namespace Paperless_Meeting.Migrations
                 column: "MeetingId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Polls_VoteByUserId",
+                table: "Polls",
+                column: "VoteByUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
@@ -352,6 +419,16 @@ namespace Paperless_Meeting.Migrations
                 name: "IX_Users_DepartmentId",
                 table: "Users",
                 column: "DepartmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserVotes_PollId",
+                table: "UserVotes",
+                column: "PollId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserVotes_UserId",
+                table: "UserVotes",
+                column: "UserId");
         }
 
         /// <inheritdoc />
