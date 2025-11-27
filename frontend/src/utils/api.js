@@ -25,11 +25,11 @@ export const apiCall = async (endpoint, options = {}) => {
           const errorData = await response.json(); 
           errorDetail = errorData.message || JSON.stringify(errorData); 
       } catch (parseErr) {
-          // Nếu lỗi không phải JSON, thử đọc dưới dạng text
+        
           try {
               errorDetail = await response.text();
           } catch (textErr) {
-              // Giữ nguyên status code
+             
           }
       }
 
