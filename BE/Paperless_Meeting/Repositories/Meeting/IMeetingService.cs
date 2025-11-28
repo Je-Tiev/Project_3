@@ -4,7 +4,7 @@ namespace Paperless_Meeting.Repositories.Meeting;
 
 public interface IMeetingService
 {
-    Task<MeetingDetailDto> CreateMeetingAsync(MeetingCreateDto createDto, int creatorId);
+    Task<MeetingDetailDto> CreateMeetingAsync(MeetingCreateDto createDto, int creatorId, string roomId);
     Task<IEnumerable<MeetingSummaryDto>> GetAllMeetingsAsync();
     Task<MeetingDetailDto?> GetMeetingByIdAsync(int meetingId);
     Task<List<MeetingListDto>> GetMeetingsByUserAsync(int userId);

@@ -24,6 +24,7 @@ CREATE TABLE "Meetings" (
   "EndTime" timestamp with time zone NOT NULL,
   "Location" varchar(200) NOT NULL,
   "CreatedByUserId" integer NOT NULL,
+  "CreatedAt" timestamp with time zone NOT NULL DEFAULT now(),
   "Status" text NOT NULL,
   CONSTRAINT "FK_Meetings_Users_CreatedByUserId" FOREIGN KEY ("CreatedByUserId") REFERENCES "Users" ("UserId") ON DELETE CASCADE
 );

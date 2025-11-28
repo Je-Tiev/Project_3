@@ -1,11 +1,29 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Eye } from 'lucide-react';
+import React, { useState } from "react";
+import { Plus, Trash2, Eye } from "lucide-react";
 
 const RoomsPage = () => {
   const [rooms] = useState([
-    { id: 1, name: 'Conference Room A', status: 'Available', currentUser: '-', upcoming: '2 meetings today' },
-    { id: 2, name: 'Meeting Room 3', status: 'In Use', currentUser: 'John Doe', upcoming: '1 meeting in 30min' },
-    { id: 3, name: 'Boardroom', status: 'Available', currentUser: '-', upcoming: 'No upcoming meetings' }
+    {
+      id: 1,
+      name: "Conference Room A",
+      status: "Available",
+      currentUser: "-",
+      upcoming: "2 meetings today",
+    },
+    {
+      id: 2,
+      name: "Meeting Room 3",
+      status: "In Use",
+      currentUser: "John Doe",
+      upcoming: "1 meeting in 30min",
+    },
+    {
+      id: 3,
+      name: "Boardroom",
+      status: "Available",
+      currentUser: "-",
+      upcoming: "No upcoming meetings",
+    },
   ]);
 
   return (
@@ -23,32 +41,61 @@ const RoomsPage = () => {
           <table className="w-full">
             <thead className="bg-secondary">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Room Name</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Current User</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Upcoming Schedule</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                  Room Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                  Current User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                  Upcoming Schedule
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary-dark">
               {rooms.map((room, index) => (
-                <tr key={room.id} className={index % 2 === 0 ? 'bg-white' : 'bg-secondary'}>
-                  <td className="px-6 py-4 text-sm text-text font-medium">{room.name}</td>
+                <tr
+                  key={room.id}
+                  className={index % 2 === 0 ? "bg-white" : "bg-secondary"}
+                >
+                  <td className="px-6 py-4 text-sm text-text font-medium">
+                    {room.name}
+                  </td>
                   <td className="px-6 py-4 text-sm">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      room.status === 'Available' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        room.status === "Available"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-orange-100 text-orange-700"
+                      }`}
+                    >
                       {room.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-text">{room.currentUser}</td>
-                  <td className="px-6 py-4 text-sm text-text-light">{room.upcoming}</td>
+                  <td className="px-6 py-4 text-sm text-text">
+                    {room.currentUser}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-text-light">
+                    {room.upcoming}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 text-primary hover:bg-secondary rounded-button transition-colors" title="View History">
+                      <button
+                        className="p-2 text-primary hover:bg-secondary rounded-button transition-colors"
+                        title="View History"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-red-600 hover:bg-secondary rounded-button transition-colors" title="Delete">
+                      <button
+                        className="p-2 text-red-600 hover:bg-secondary rounded-button transition-colors"
+                        title="Delete"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -62,6 +109,4 @@ const RoomsPage = () => {
     </div>
   );
 };
-
 export default RoomsPage;
-

@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using Paperless_Meeting.DTOs.Participant;
 
 namespace Paperless_Meeting.DTOs.Meeting;
 
@@ -18,4 +20,7 @@ public class MeetingCreateDto
 
     [StringLength(200)]
     public string? Location { get; set; }
+    
+    // Optional list of participants to add when creating the meeting
+    public List<ParticipantDto>? Participants { get; set; } = new List<ParticipantDto>();
 }

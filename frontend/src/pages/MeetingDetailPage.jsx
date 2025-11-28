@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useApp } from '../contexts/AppContext';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  User, 
-  FileText, 
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useApp } from "../contexts/AppContext";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  FileText,
   Users,
   ArrowLeft,
   Video,
   Mic,
   MicOff,
-  VideoOff
-} from 'lucide-react';
+  VideoOff,
+} from "lucide-react";
 
 const MeetingDetailPage = () => {
   const { meetingId } = useParams(); // đổi từ `id` → `meetingId` cho thống nhất với App.js
@@ -22,20 +22,20 @@ const MeetingDetailPage = () => {
   const [meeting, setMeeting] = useState(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     // So sánh id dưới dạng string để tránh mismatch
-    const foundMeeting = meetings.find(m => `${m.id}` === `${meetingId}`);
+    const foundMeeting = meetings.find((m) => `${m.id}` === `${meetingId}`);
     if (foundMeeting) {
       setMeeting(foundMeeting);
     } else {
-      navigate('/'); // nếu không tìm thấy → về Home
+      navigate("/"); // nếu không tìm thấy → về Home
     }
   }, [meetingId, meetings, navigate]);
 
   const handleSaveNotes = () => {
-    alert('Đã lưu ghi chú!');
+    alert("Đã lưu ghi chú!");
   };
 
   if (!meeting) {
@@ -56,7 +56,7 @@ const MeetingDetailPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/')} // về trang chủ User
+                onClick={() => navigate("/")} // về trang chủ User
                 className="hover:bg-red-700 p-2 rounded-lg transition-colors"
               >
                 <ArrowLeft size={24} />
@@ -92,7 +92,9 @@ const MeetingDetailPage = () => {
                   <button
                     onClick={() => setIsMicOn(!isMicOn)}
                     className={`p-4 rounded-full transition-colors ${
-                      isMicOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
+                      isMicOn
+                        ? "bg-gray-700 hover:bg-gray-600"
+                        : "bg-red-600 hover:bg-red-700"
                     }`}
                   >
                     {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
@@ -100,13 +102,15 @@ const MeetingDetailPage = () => {
                   <button
                     onClick={() => setIsVideoOn(!isVideoOn)}
                     className={`p-4 rounded-full transition-colors ${
-                      isVideoOn ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'
+                      isVideoOn
+                        ? "bg-gray-700 hover:bg-gray-600"
+                        : "bg-red-600 hover:bg-red-700"
                     }`}
                   >
                     {isVideoOn ? <Video size={24} /> : <VideoOff size={24} />}
                   </button>
-                  <button 
-                    onClick={() => navigate('/')} // rời cuộc họp → về Home
+                  <button
+                    onClick={() => navigate("/")} // rời cuộc họp → về Home
                     className="px-6 py-4 bg-red-600 hover:bg-red-700 rounded-full font-semibold transition-colors"
                   >
                     Rời cuộc họp
@@ -139,14 +143,18 @@ const MeetingDetailPage = () => {
 
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">Thông tin cuộc họp</h2>
-              
+              <h2 className="text-lg font-bold text-gray-800 mb-4">
+                Thông tin cuộc họp
+              </h2>
+
               <div className="space-y-4">
                 <div className="flex items-start">
                   <Calendar className="text-red-600 mr-3 mt-1" size={20} />
                   <div>
                     <p className="text-sm text-gray-500">Ngày</p>
-                    <p className="font-semibold">{meeting.dayOfWeek}, {meeting.date}</p>
+                    <p className="font-semibold">
+                      {meeting.dayOfWeek}, {meeting.date}
+                    </p>
                   </div>
                 </div>
 
@@ -154,7 +162,9 @@ const MeetingDetailPage = () => {
                   <Clock className="text-red-600 mr-3 mt-1" size={20} />
                   <div>
                     <p className="text-sm text-gray-500">Thời gian</p>
-                    <p className="font-semibold">{meeting.session} - {meeting.time}</p>
+                    <p className="font-semibold">
+                      {meeting.session} - {meeting.time}
+                    </p>
                   </div>
                 </div>
 
@@ -170,7 +180,9 @@ const MeetingDetailPage = () => {
                   <User className="text-red-600 mr-3 mt-1" size={20} />
                   <div>
                     <p className="text-sm text-gray-500">Lãnh đạo chủ trì</p>
-                    <p className="font-semibold">{meeting.organizer || 'Chưa cập nhật'}</p>
+                    <p className="font-semibold">
+                      {meeting.organizer || "Chưa cập nhật"}
+                    </p>
                   </div>
                 </div>
 
@@ -191,24 +203,32 @@ const MeetingDetailPage = () => {
               <div className="space-y-3">
                 {meeting.file_rev && (
                   <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Tài liệu được phát</p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Tài liệu được phát
+                    </p>
                     <p className="text-sm">{meeting.file_rev}</p>
                   </div>
                 )}
                 {meeting.file_pre && (
                   <div className="p-3 bg-green-50 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-1">Tài liệu chuẩn bị</p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Tài liệu chuẩn bị
+                    </p>
                     <p className="text-sm">{meeting.file_pre}</p>
                   </div>
                 )}
                 {!meeting.file_rev && !meeting.file_pre && (
-                  <p className="text-sm text-gray-500 text-center py-4">Chưa có tài liệu</p>
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Chưa có tài liệu
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">Trạng thái</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-4">
+                Trạng thái
+              </h2>
               <div className="text-center">
                 {meeting.approved ? (
                   <span className="inline-block bg-green-500 text-white px-6 py-3 rounded-full font-semibold">

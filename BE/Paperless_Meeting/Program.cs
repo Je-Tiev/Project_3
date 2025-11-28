@@ -6,7 +6,7 @@ using Microsoft.Extensions.FileProviders;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Paperless_Meeting.Models;
 using Paperless_Meeting.Data;
-
+using Paperless_Meeting.Hubs; 
 using Paperless_Meeting.Repositories.Auth;
 using Paperless_Meeting.Repositories.Document;
 using Paperless_Meeting.Repositories.Meeting;
@@ -87,6 +87,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
     });
+//SignalR
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -153,5 +155,6 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<MeetingHub>("/meetinghub");
 
 app.Run();

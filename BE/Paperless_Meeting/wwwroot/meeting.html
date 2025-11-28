@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paperless Meeting - WebRTC Thuần</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+      }
+      #container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #2c3e50;
+      }
+      #inputArea {
+        text-align: center;
+        margin: 20px 0;
+      }
+      input,
+      button {
+        padding: 12px;
+        margin: 5px;
+        font-size: 16px;
+        border-radius: 6px;
+      }
+      input {
+        width: 300px;
+        border: 1px solid #ccc;
+      }
+      button {
+        background: #3498db;
+        color: white;
+        border: none;
+        cursor: pointer;
+        width: 150px;
+      }
+      button:hover {
+        background: #2980b9;
+      }
+      #videos {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+      }
+      video {
+        width: 420px;
+        height: 300px;
+        background: #000;
+        border-radius: 10px;
+        border: 3px solid #3498db;
+      }
+      #status {
+        text-align: center;
+        font-weight: bold;
+        margin: 10px;
+        color: #27ae60;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h1>Paperless Meeting - WebRTC Thuần</h1>
+      <div id="inputArea">
+        <input
+          type="text"
+          id="roomInput"
+          placeholder="Dán mã phòng vào đây (vd: room-cd7d33a2bc)"
+        />
+        <br />
+        <button onclick="joinRoom()">Tham gia ngay</button>
+      </div>
+      <div id="status"></div>
+      <div id="videos"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5000/meetinghub", {
+          skipNegotiation: false,
+          transport: signalR.HttpTransportType.WebSockets,
+        })
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+      const peers = {};
+      let localStream;
+
+      async function joinRoom() {
+        const roomId = document.getElementById("roomInput").value.trim();
+        if (!roomId) return alert("Vui lòng nhập mã phòng!");
+
+        document.getElementById("status").innerHTML = "Đang kết nối...";
+        await connection.start();
+        await connection.invoke("JoinRoom", roomId);
+
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        addVideo(localStream, true); // bản thân mình
+
+        document.getElementById(
+          "status"
+        ).innerHTML = `<span style="color:green">Đã vào phòng: <b>${roomId}</b></span>`;
+        document.getElementById(
+          "inputArea"
+        ).innerHTML = `<h3>Phòng: <b>${roomId}</b></h3><p>Chia sẻ mã này cho người khác tham gia cùng!</p>`;
+      }
+
+      // Có người mới vào phòng
+      connection.on("UserJoined", async (userId) => {
+        console.log("User joined:", userId);
+        const peer = createPeer(userId);
+        localStream
+          .getTracks()
+          .forEach((track) => peer.addTrack(track, localStream));
+      });
+
+      // Nhận tín hiệu từ người khác
+      connection.on("ReceiveSignal", async (fromId, signal) => {
+        let peer = peers[fromId];
+        if (!peer) {
+          peer = createPeer(fromId);
+          localStream
+            .getTracks()
+            .forEach((track) => peer.addTrack(track, localStream));
+        }
+
+        if (signal.type === "offer") {
+          await peer.setRemoteDescription(signal);
+          const answer = await peer.createAnswer();
+          await peer.setLocalDescription(answer);
+          connection.invoke(
+            "SendSignal",
+            document.getElementById("roomInput").value,
+            fromId,
+            answer
+          );
+        } else if (signal.type === "answer") {
+          await peer.setRemoteDescription(signal);
+        } else if (signal.candidate) {
+          await peer.addIceCandidate(signal);
+        }
+      });
+
+      function createPeer(userId) {
+        const peer = new RTCPeerConnection({
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+
+        peer.ontrack = (e) => {
+          if (e.streams[0]) addVideo(e.streams[0]);
+        };
+
+        peer.onicecandidate = (e) => {
+          if (e.candidate) {
+            connection.invoke(
+              "SendSignal",
+              document.getElementById("roomInput").value,
+              userId,
+              e.candidate
+            );
+          }
+        };
+
+        // Gửi offer nếu mình là người đến trước
+        peer
+          .createOffer()
+          .then((offer) => peer.setLocalDescription(offer))
+          .then(() =>
+            connection.invoke(
+              "SendSignal",
+              document.getElementById("roomInput").value,
+              userId,
+              peer.localDescription
+            )
+          );
+
+        peers[userId] = peer;
+        return peer;
+      }
+
+      function addVideo(stream, muted = false) {
+        const video = document.createElement("video");
+        video.srcObject = stream;
+        video.autoplay = true;
+        video.muted = muted;
+        video.playsInline = true;
+        document.getElementById("videos").appendChild(video);
+      }
+    </script>
+  </body>
+</html>

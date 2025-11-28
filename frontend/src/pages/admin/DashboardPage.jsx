@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
-import { apiCall } from '../../utils/api';
-import { useApp } from '../../contexts/AppContext';
-import SummaryCards from '../../components/admin/SummaryCards';
-import MeetingsChart from '../../components/admin/MeetingsChart';
-import ParticipationChart from '../../components/admin/ParticipationChart';
-import MeetingDetailsPage from './MeetingDetailsPage';
+import React, { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
+import { apiCall } from "../../utils/api";
+import { useApp } from "../../contexts/AppContext";
+import SummaryCards from "../../components/admin/SummaryCards";
+import MeetingsChart from "../../components/admin/MeetingsChart";
+import ParticipationChart from "../../components/admin/ParticipationChart";
+import MeetingDetailsPage from "./MeetingDetailsPage";
 import { useNavigate } from "react-router-dom";
 
 const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
@@ -16,59 +16,80 @@ const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
   const formatDate = (iso) => {
     if (!iso) return "";
     const dateObj = new Date(iso);
-    return dateObj.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    return dateObj.toLocaleDateString("vi-VN", {
+      timeZone: "Asia/Ho_Chi_Minh",
+    });
   };
 
   const formatTime = (iso) => {
     if (!iso) return "";
     const dateObj = new Date(iso);
-    return dateObj.toLocaleTimeString('vi-VN', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false, 
-      timeZone: 'Asia/Ho_Chi_Minh' 
+    return dateObj.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Asia/Ho_Chi_Minh",
     });
   };
 
   const getStatusBadge = (status) => {
-  const config = {
-    not_started: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Upcoming' },
-    ongoing: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Ongoing' },
-    completed: { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' },
-    postponed: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Postponed' }
+    const config = {
+      not_started: {
+        bg: "bg-blue-100",
+        text: "text-blue-700",
+        label: "Upcoming",
+      },
+      ongoing: {
+        bg: "bg-orange-100",
+        text: "text-orange-700",
+        label: "Ongoing",
+      },
+      completed: {
+        bg: "bg-green-100",
+        text: "text-green-700",
+        label: "Completed",
+      },
+      postponed: {
+        bg: "bg-gray-100",
+        text: "text-gray-700",
+        label: "Postponed",
+      },
+    };
+
+    const c = config[status] || config.not_started;
+
+    return (
+      <span
+        className={`px-4 py-1 rounded-full text-sm font-semibold ${c.bg} ${c.text}`}
+      >
+        {c.label}
+      </span>
+    );
   };
-
-  const c = config[status] || config.not_started;
-
-  return (
-    <span className={`px-4 py-1 rounded-full text-sm font-semibold ${c.bg} ${c.text}`}>
-      {c.label}
-    </span>
-  );
-};
-
 
   useEffect(() => {
     const fetchRecentMeetings = async () => {
       try {
-        const data = await apiCall('/Meetings', { method: 'GET' });
-        const today = new Date().toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const data = await apiCall("/Meetings", { method: "GET" });
+        const today = new Date().toLocaleDateString("vi-VN", {
+          timeZone: "Asia/Ho_Chi_Minh",
+        });
 
         const filtered = data
-          .map(m => ({
+          .map((m) => ({
             id: m.meetingId,
             title: m.title,
             date: formatDate(m.startTime),
             time: formatTime(m.startTime),
             location: m.location,
             host: m.createdByUserName,
-            status: m.status
+            status: m.status,
           }))
-          .filter(m => m.date === today);
+          .filter((m) => m.date === today);
 
         setRecentMeetings(filtered);
       } catch (err) {
-        console.error('Lỗi tải cuộc họp:', err);
+        console.error("Lỗi tải cuộc họp:", err);
       }
     };
 
@@ -77,9 +98,9 @@ const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
 
   if (selectedMeetingId) {
     return (
-      <MeetingDetailsPage 
-        meetingId={selectedMeetingId} 
-        onBack={() => setSelectedMeetingId(null)} 
+      <MeetingDetailsPage
+        meetingId={selectedMeetingId}
+        onBack={() => setSelectedMeetingId(null)}
       />
     );
   }
@@ -122,12 +143,24 @@ const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
         <table className="w-full">
           <thead className="bg-secondary">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Time</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Location</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Host</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                Time
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                Title
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                Location
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                Host
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-text-light uppercase">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-secondary-dark">
@@ -135,7 +168,9 @@ const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
               recentMeetings.map((m, index) => (
                 <tr
                   key={m.id}
-                  className={`${index % 2 === 0 ? 'bg-white' : 'bg-secondary'} cursor-pointer hover:bg-primary/10 transition-colors`}
+                  className={`${
+                    index % 2 === 0 ? "bg-white" : "bg-secondary"
+                  } cursor-pointer hover:bg-primary/10 transition-colors`}
                   onClick={() => setSelectedMeetingId(m.id)}
                 >
                   <td className="px-6 py-4 text-text">{m.date}</td>
@@ -143,7 +178,9 @@ const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
                   <td className="px-6 py-4 text-text">{m.title}</td>
                   <td className="px-6 py-4 text-text">{m.location}</td>
                   <td className="px-6 py-4 text-text">{m.host}</td>
-                  <td className="px-6 py-4 text-text">{getStatusBadge(m.status)}</td>
+                  <td className="px-6 py-4 text-text">
+                    {getStatusBadge(m.status)}
+                  </td>
                 </tr>
               ))
             ) : (
