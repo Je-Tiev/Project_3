@@ -4,7 +4,9 @@ using Paperless_Meeting.DTOs.Meeting;
 using Paperless_Meeting.Repositories.Meeting;
 using Paperless_Meeting.Models;
 using System.Security.Claims;
-
+using Paperless_Meeting.Services.Meeting;
+using Paperless_Meeting.Services.Participant;
+using Paperless_Meeting.Repositories.Participant;
 namespace Paperless_Meeting.Controllers.Meeting
 {
     [ApiController]
@@ -13,10 +15,11 @@ namespace Paperless_Meeting.Controllers.Meeting
     public class MeetingsController : ControllerBase
     {
         private readonly IMeetingService _meetingService;
-
-        public MeetingsController(IMeetingService meetingService)
+        private readonly IParticipantService _participantService; // Thêm để lấy danh sách người tham gia=>kiểm tra quyền vào meeting
+        public MeetingsController(IMeetingService meetingService, IParticipantService participantService)
         {
             _meetingService = meetingService;
+            _participantService = participantService;
         }
 
         [HttpGet]
@@ -40,7 +43,13 @@ namespace Paperless_Meeting.Controllers.Meeting
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+                return BadRequest(new { message = "Dữ liệu không hợp lệ.", errors });
             }
 
             if (createDto.StartTime >= createDto.EndTime)
@@ -49,7 +58,13 @@ namespace Paperless_Meeting.Controllers.Meeting
             }
 
             var creatorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            
+            if (creatorId ==0)
+            {
+                return Unauthorized(new { message = "Người dùng không hợp lệ." });
+            }
+            //Tạo roomID ngẫu nhiên
+            var guid = Guid.NewGuid().ToString("N");
+            var roomId = $"room-{guid.Substring(0, 10)}";
             var createdMeeting = await _meetingService.CreateMeetingAsync(createDto, creatorId);
             
             return CreatedAtAction(nameof(GetMeetingById), new { id = createdMeeting.MeetingId }, createdMeeting);
@@ -81,6 +96,42 @@ namespace Paperless_Meeting.Controllers.Meeting
             if (!success) return NotFound("Không tìm thấy cuộc họp để xóa.");
             
             return NoContent();
+        }
+
+        [HttpGet("join/{meetingId}")]
+        public async Task<IActionResult> JoinMeeting(int meetingId)
+        {
+            var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null) return NotFound("Không tìm thấy cuộc họp.");
+            //Lấy danh sách người tham gia
+            var participants = await _participantService.GetMeetingParticipantsAsync(meetingId);
+            //Kiểm tra quyền tham gia
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var isParticipant = participants.Any(p => p.UserId == userId);
+            if (!isParticipant)
+            {
+                return BadRequest("Bạn không có quyền tham gia cuộc họp này.");
+            }
+            //Kiểm tra thời gian tham gia
+            var currentTime = DateTime.Now;
+            if (currentTime < meeting.StartTime || currentTime > meeting.EndTime)
+            {
+                return BadRequest("Hiện không phải thời gian diễn ra cuộc họp.");
+            }
+            var roomId = meeting.RoomId;
+            return Ok(new
+            {
+                roomId,
+                signalRUrl = "/meetinghub",
+                meetingInfo = new
+                {
+                    meetingId,
+                    title = meeting.Title,
+                    startTime = meeting.StartTime.ToString("HH:mm dd/MM/yyyy"),
+                    endTime = meeting.EndTime.ToString("HH:mm dd/MM/yyyy")
+                },
+                message = "Kết nối thành công."
+            });
         }
     }
 }
