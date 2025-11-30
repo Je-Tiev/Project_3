@@ -6,8 +6,9 @@ public class MeetingCreateDto
 {
     [Required]
     [StringLength(200)]
-    public required string Title { get; set; }
+    public string Title { get; set; }
 
+    public string RoomId { get; set; }
     public string? Description { get; set; }
 
     [Required]

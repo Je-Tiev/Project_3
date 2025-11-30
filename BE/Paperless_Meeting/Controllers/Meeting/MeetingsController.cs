@@ -7,6 +7,7 @@ using System.Security.Claims;
 using Paperless_Meeting.Services.Meeting;
 using Paperless_Meeting.Services.Participant;
 using Paperless_Meeting.Repositories.Participant;
+using Paperless_Meeting.Migrations;
 namespace Paperless_Meeting.Controllers.Meeting
 {
     [ApiController]
@@ -39,7 +40,7 @@ namespace Paperless_Meeting.Controllers.Meeting
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateMeeting([FromBody] MeetingCreateDto createDto)
+        public async Task<IActionResult> CreateMeeting([FromBody] MeetingCreateRequestDto requestDto)
         {
             if (!ModelState.IsValid)
             {
@@ -51,7 +52,16 @@ namespace Paperless_Meeting.Controllers.Meeting
                     );
                 return BadRequest(new { message = "Dữ liệu không hợp lệ.", errors });
             }
-
+            
+            var createDto = new MeetingCreateDto
+            {
+                Title = requestDto.Title,
+                RoomId = $"room-{Guid.NewGuid().ToString("N").Substring(0, 10)}",
+                Description = requestDto.Description,
+                StartTime = requestDto.StartTime,
+                EndTime = requestDto.EndTime,
+                Location = requestDto.Location
+            };
             if (createDto.StartTime >= createDto.EndTime)
             {
                 return BadRequest(new { message = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc." });
@@ -62,9 +72,7 @@ namespace Paperless_Meeting.Controllers.Meeting
             {
                 return Unauthorized(new { message = "Người dùng không hợp lệ." });
             }
-            //Tạo roomID ngẫu nhiên
-            var guid = Guid.NewGuid().ToString("N");
-            var roomId = $"room-{guid.Substring(0, 10)}";
+    
             var createdMeeting = await _meetingService.CreateMeetingAsync(createDto, creatorId);
             
             return CreatedAtAction(nameof(GetMeetingById), new { id = createdMeeting.MeetingId }, createdMeeting);

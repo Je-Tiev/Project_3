@@ -7,7 +7,7 @@ public class Meeting
 {
     [Key]
     public int MeetingId { get; set; }
-
+    public string RoomId { get; set; } = string.Empty;
     [Required]
     [StringLength(200)]
     public string Title { get; set; }

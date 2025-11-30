@@ -61,6 +61,7 @@ namespace Paperless_Meeting.Services.Meeting
             var meeting = new Models.Meeting
             {
                 Title = createDto.Title,
+                RoomId = createDto.RoomId,
                 Description = createDto.Description,
                 StartTime = createDto.StartTime,
                 EndTime = createDto.EndTime,
@@ -86,6 +87,7 @@ namespace Paperless_Meeting.Services.Meeting
             return new MeetingDetailDto
             {
                 MeetingId = meeting.MeetingId,
+                RoomId = meeting.RoomId,
                 Title = meeting.Title,
                 Description = meeting.Description,
                 StartTime = meeting.StartTime,
