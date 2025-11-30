@@ -6,7 +6,7 @@ using Microsoft.Extensions.FileProviders;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Paperless_Meeting.Models;
 using Paperless_Meeting.Data;
-
+using Paperless_Meeting.Hubs;
 using Paperless_Meeting.Repositories.Auth;
 using Paperless_Meeting.Repositories.Document;
 using Paperless_Meeting.Repositories.Meeting;
@@ -17,6 +17,7 @@ using Paperless_Meeting.Services.Meeting;
 using Paperless_Meeting.Services.Participant;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -57,11 +58,13 @@ builder.Services.AddDbContext<PaperlessMeetingDbContext>(options =>
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
     ));
 
+builder.Services.AddSignalR(); // Thêm SignalR
+
 // Cấu hình CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("http://localhost:3000", "http://localhost")
+    policy.WithOrigins("http://localhost:3000", "http://localhost") 
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials());
@@ -72,6 +75,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IParticipantService, ParticipantService>();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -153,5 +157,7 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapHub<MeetingHub>("/meetinghub"); // Map SignalR hub
 
 app.Run();
