@@ -121,7 +121,7 @@ namespace Paperless_Meeting.Controllers.Meeting
                 return BadRequest("Bạn không có quyền tham gia cuộc họp này.");
             }
             //Kiểm tra thời gian tham gia
-            var currentTime = DateTime.Now;
+            var currentTime = DateTime.UtcNow;
             if (currentTime < meeting.StartTime || currentTime > meeting.EndTime)
             {
                 return BadRequest("Hiện không phải thời gian diễn ra cuộc họp.");

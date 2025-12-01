@@ -45,6 +45,7 @@ namespace Paperless_Meeting.Services.Meeting
             return new MeetingDetailDto
             {
                 MeetingId = meeting.MeetingId,
+                RoomId = meeting.RoomId,
                 Title = meeting.Title,
                 Description = meeting.Description,
                 StartTime = meeting.StartTime,
