@@ -1,0 +1,19 @@
+{
+  "Version": 1,
+  "Hash": "hSMks0ujqrplqF5KyNTvcf8KPsibxsqw7FLEvLE5NX0=",
+  "Source": "Paperless_Meeting",
+  "BasePath": "_content/Paperless_Meeting",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "Paperless_Meeting\\wwwroot",
+      "Source": "Paperless_Meeting",
+      "ContentRoot": "D:\\Project_3\\BE\\Paperless_Meeting\\wwwroot\\",
+      "BasePath": "_content/Paperless_Meeting",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": []
+}
