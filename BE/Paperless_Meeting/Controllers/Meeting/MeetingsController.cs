@@ -40,6 +40,7 @@ namespace Paperless_Meeting.Controllers.Meeting
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> CreateMeeting([FromBody] MeetingCreateRequestDto requestDto)
         {
             if (!ModelState.IsValid)
@@ -79,6 +80,7 @@ namespace Paperless_Meeting.Controllers.Meeting
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> UpdateMeeting(int id, [FromBody] MeetingUpdateDto updateDto)
         {
             if (!ModelState.IsValid)
@@ -98,6 +100,7 @@ namespace Paperless_Meeting.Controllers.Meeting
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> DeleteMeeting(int id)
         {
             var success = await _meetingService.DeleteMeetingAsync(id);

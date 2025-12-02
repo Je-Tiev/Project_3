@@ -43,7 +43,7 @@ namespace Paperless_Meeting.Services.Auth
                 Email = registerDto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
                 DepartmentId = registerDto.DepartmentID,
-                Role = User.UserRole.Admin // Mặc định role là User
+                Role = User.UserRole.User
             };
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
