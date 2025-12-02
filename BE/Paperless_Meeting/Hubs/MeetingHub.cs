@@ -25,7 +25,9 @@ namespace Paperless_Meeting.Hubs
         public async Task JoinRoom(int meetingId)
         {
             //Kiểm qua quyền người dùng
-            var userIdClaim = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = Context.User?.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value
+                  ?? Context.User?.FindFirst("nameidentifier")?.Value
+                  ?? Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdClaim, out int userId))
                 throw new HubException("Không xác thực người dùng.");
 
@@ -37,7 +39,7 @@ namespace Paperless_Meeting.Hubs
             if (meeting == null)
                 throw new HubException("Không tìm thấy cuộc họp.");
 
-            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+            var now = DateTime.UtcNow;
             if (now < meeting.StartTime || now > meeting.EndTime)
                 throw new HubException("Hiện không phải thời gian diễn ra cuộc họp.");
 
