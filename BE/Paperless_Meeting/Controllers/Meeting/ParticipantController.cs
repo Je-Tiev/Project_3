@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Paperless_Meeting.DTOs.Participant;
+using Paperless_Meeting.Models;
 using Paperless_Meeting.Repositories.Participant;
 
 namespace Paperless_Meeting.Controllers.Meeting;
@@ -27,14 +29,21 @@ public class ParticipantController : ControllerBase
     {
         try
         {
-            var participants = await _participantService.GetMeetingParticipantsAsync(meetingId);
-            
-            if (participants == null || !participants.Any())
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var allParticipants = await _participantService.GetMeetingParticipantsAsync(meetingId);
+            var isParticipant = allParticipants.Any(p => p.UserId == userId);
+    
+            if (!isParticipant && !User.IsInRole("Admin") && !User.IsInRole("SuperAdmin"))
             {
-                return Ok(new List<UserViewDto>()); // Trả về danh sách rỗng
+                return Unauthorized(new { message = "Chỉ người trong cuộc họp mới có quyền xem danh sách này" });
+            }
+            
+            if (allParticipants == null || !allParticipants.Any())
+            {
+                return Ok(new List<UserViewDto>());
             }
 
-            return Ok(participants);
+            return Ok(allParticipants);
         }
         catch (Exception ex)
         {
@@ -93,6 +102,13 @@ public class ParticipantController : ControllerBase
 
         try
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var isHost = await _participantService.IsHostOfMeetingAsync(meetingId, userId);
+
+            if (!isHost)
+            {
+                return Unauthorized(new { message = "Chỉ Host mới có quyền thêm người tham gia" });
+            }
             var results = await _participantService.AddMultipleParticipantsAsync(meetingId, addMultipleDto.Participants);
 
             if (results == null || !results.Any())
@@ -128,6 +144,18 @@ public class ParticipantController : ControllerBase
     {
         try
         {
+            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            // Chỉ Host mới có quyền xóa người tham gia 
+            if (userId != currentUserId)
+            {
+                var isHost = await _participantService.IsHostOfMeetingAsync(meetingId, currentUserId);
+
+                if (!isHost)
+                {
+                    return Unauthorized(new { message = "Chỉ Host mới có quyền xóa người tham gia" });
+                }
+            }
+            
             var result = await _participantService.RemoveParticipantAsync(meetingId, userId);
 
             if (!result)
