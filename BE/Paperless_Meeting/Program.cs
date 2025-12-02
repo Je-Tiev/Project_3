@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.Tasks;
 using System.Text;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Paperless_Meeting.Models;
@@ -58,6 +59,11 @@ builder.Services.AddDbContext<PaperlessMeetingDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
     ));
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 524288000; // 500MB
+});
 
 builder.Services.AddSignalR(); // Thêm SignalR
 

@@ -26,26 +26,18 @@ public class DocumentService : IDocumentService
     {
         // Kiểm tra meeting có tồn tại không
         var meeting = await _context.Meetings.FindAsync(meetingId);
-        if (meeting == null)
-        {
-            throw new KeyNotFoundException($"Meeting với ID {meetingId} không tồn tại");
-        }
-
-        var isParticipant = await _context.MeetingParticipants
-            .AnyAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
+        if (meeting == null) throw new KeyNotFoundException($"Meeting với ID {meetingId} không tồn tại");
         
-        var isCreator = meeting.CreatedByUserId == userId;
+        var participant = await _context.MeetingParticipants
+            .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId 
+                                       && mp.UserId == userId 
+                                       && (mp.RoleInMeeting == MeetingParticipant.MeetingRole.Host 
+                                           || mp.RoleInMeeting == MeetingParticipant.MeetingRole.Member));
 
-        if (!isParticipant && !isCreator)
-        {
-            throw new UnauthorizedAccessException("Bạn không có quyền upload tài liệu cho cuộc họp này");
-        }
+        if (participant == null) throw new UnauthorizedAccessException("Chỉ Host và Member mới có quyền upload tài liệu");
 
-        if (uploadDto.File == null || uploadDto.File.Length == 0)
-        {
-            throw new ArgumentException("File không hợp lệ");
-        }
-
+        if (uploadDto.File == null || uploadDto.File.Length == 0) throw new ArgumentException("File không hợp lệ");
+        
         var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "documents");
         if (!Directory.Exists(uploadsFolder))
         {
@@ -111,6 +103,89 @@ public class DocumentService : IDocumentService
             throw new Exception("Không thể lưu thông tin tài liệu vào database", ex);
         }
     }
+    
+    public async Task<List<DocumentDto>> UploadMultipleDocumentsAsync(int meetingId, DocumentMultipleUploadDto uploadDto, int userId)
+    {
+        if (uploadDto.Files == null || !uploadDto.Files.Any())
+        {
+            throw new ArgumentException("Danh sách file rỗng");
+        }
+
+        var results = new List<DocumentDto>();
+    
+        foreach (var file in uploadDto.Files)
+        {
+            var singleUploadDto = new DocumentUploadDto 
+            { 
+                File = file, 
+                Visibility = uploadDto.Visibility 
+            };
+        
+            var result = await UploadDocumentAsync(meetingId, singleUploadDto, userId);
+            results.Add(result);
+        }
+    
+        return results;
+    }
+    
+    public async Task<DocumentDto> UploadDocumentStreamAsync(int meetingId, Stream fileStream, string contentType, string visibility, int userId)
+    {
+        var meeting = await _context.Meetings.FindAsync(meetingId);
+        if (meeting == null) throw new KeyNotFoundException($"Meeting {meetingId} không tồn tại");
+    
+        var participant = await _context.MeetingParticipants
+            .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId 
+                                       && mp.UserId == userId 
+                                       && (mp.RoleInMeeting == MeetingParticipant.MeetingRole.Host 
+                                           || mp.RoleInMeeting == MeetingParticipant.MeetingRole.Member));
+
+        if (participant == null) throw new UnauthorizedAccessException("Chỉ Host và Member mới có quyền upload tài liệu");
+
+        var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "documents");
+        Directory.CreateDirectory(uploadsFolder);
+
+        var fileName = $"stream_{Guid.NewGuid()}{GetExtensionFromContentType(contentType)}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        using (var fileStreamOutput = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
+        {
+            await fileStream.CopyToAsync(fileStreamOutput);
+        }
+
+        var document = new Models.Document
+        {
+            MeetingId = meetingId,
+            FileName = fileName,
+            FilePath = $"/uploads/documents/{fileName}",
+            Visibility = Enum.Parse<Models.Document.DocumentVisibility>(visibility),
+            UploadedBy = userId,
+            UploadDate = DateTime.UtcNow
+        };
+
+        _context.Documents.Add(document);
+        await _context.SaveChangesAsync();
+
+        return MapToDto(document);
+    }
+
+    private string GetExtensionFromContentType(string contentType)
+    {
+        return contentType switch
+        {
+            "application/pdf" => ".pdf",
+            "application/msword" => ".doc",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => ".docx",
+            "application/vnd.ms-excel" => ".xls",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ".xlsx",
+            "application/vnd.ms-powerpoint" => ".ppt",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" => ".pptx",
+            "text/plain" => ".txt",
+            "image/jpeg" => ".jpg",
+            "image/png" => ".png",
+            _ => ".bin"
+        };
+    }
+    
     public async Task<bool> DeleteDocumentAsync(int documentId, int userId)
     {
         var document = await _context.Documents
