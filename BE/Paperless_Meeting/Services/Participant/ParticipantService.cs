@@ -175,4 +175,12 @@ public class ParticipantService : IParticipantService
 
         return results;
     }
+    
+    public async Task<bool> IsHostOfMeetingAsync(int meetingId, int userId)
+    {
+        return await _context.MeetingParticipants
+            .AnyAsync(mp => mp.MeetingId == meetingId 
+                            && mp.UserId == userId 
+                            && mp.RoleInMeeting == MeetingParticipant.MeetingRole.Host);
+    }
 }
