@@ -7,7 +7,7 @@ using System.Security.Claims;
 namespace Paperless_Meeting.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/[action]")]
 [Authorize]
 public class DocumentController : ControllerBase
 {
@@ -64,6 +64,48 @@ public class DocumentController : ControllerBase
         }
     }
 
+    [HttpPost("meeting/{meetingId}/multiple")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadMultipleDocuments(
+        int meetingId, 
+        [FromForm] DocumentMultipleUploadDto uploadDto)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var documents = await _documentService.UploadMultipleDocumentsAsync(meetingId, uploadDto, userId);
+        
+            return Ok(new { 
+                message = $"Upload thành công {documents.Count} file", 
+                data = documents 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi upload multiple documents");
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+    
+    [HttpPost("meeting/{meetingId}/stream")]
+    [DisableRequestSizeLimit]
+    [RequestFormLimits(MultipartBodyLengthLimit = 524288000)] // 500MB
+    public async Task<IActionResult> UploadDocumentStream(int meetingId, [FromQuery] string visibility)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var document = await _documentService.UploadDocumentStreamAsync(meetingId, Request.Body, Request.ContentType, visibility, userId);
+        
+            return Ok(document);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi streaming upload");
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+    
     /// <summary>
     /// Xóa tài liệu
     /// </summary>
