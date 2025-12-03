@@ -19,6 +19,10 @@ using Paperless_Meeting.Services.Meeting;
 using Paperless_Meeting.Services.Participant;
 
 var builder = WebApplication.CreateBuilder(args);
+// --- Bật logging đầy đủ cho console ---
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -65,7 +69,10 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 524288000; // 500MB
 });
 
-builder.Services.AddSignalR(); // Thêm SignalR
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true; // Cho phép gửi chi tiết lỗi về React
+}); // Thêm SignalR
 
 // Cấu hình CORS
 builder.Services.AddCors(options =>

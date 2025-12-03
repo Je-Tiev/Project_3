@@ -16,7 +16,7 @@ namespace Paperless_Meeting.Controllers.Meeting
     public class MeetingsController : ControllerBase
     {
         private readonly IMeetingService _meetingService;
-        private readonly IParticipantService _participantService; // Thêm để lấy danh sách người tham gia=>kiểm tra quyền vào meeting
+        private readonly IParticipantService _participantService; // Thêm để lấy danh sách người tham gia => kiểm tra quyền vào meeting
         public MeetingsController(IMeetingService meetingService, IParticipantService participantService)
         {
             _meetingService = meetingService;
