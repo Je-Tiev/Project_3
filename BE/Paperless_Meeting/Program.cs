@@ -65,10 +65,16 @@ builder.Services.AddSignalR(); // Thêm SignalR
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-    policy.WithOrigins("http://localhost:3000", "http://localhost") 
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials());
+        policy.WithOrigins(
+            "http://localhost:3000",
+            "http://localhost:5173",     // <--- thêm (vite)
+            "http://127.0.0.1:5173",
+            "https://localhost:5173"     // nếu bạn chạy FE trên https
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()
+    );
 });
 
 // Cấu hình DI cho services
@@ -171,6 +177,7 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseWebSockets();
 app.MapControllers();
 
 app.MapHub<MeetingHub>("/meetinghub").RequireAuthorization(); // Map SignalR hub
