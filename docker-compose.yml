@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   db:
     image: postgres:15
@@ -16,7 +16,7 @@ services:
   backend:
     build: ./BE/Paperless_Meeting
     ports:
-    - "5000:8080"
+      - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
@@ -26,14 +26,16 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build: ./FE/FE
     ports:
-      - "80:80"
+      - "3000:80"
     environment:
       - REACT_APP_API_URL=http://backend:5000/api
+      # Khi deploy web lên server cần sửa
+      # - REACT_APP_HUB_URL=https://meeting.ngocmx.com/meetinghub
+      # - REACT_APP_API_URL=http://meeting.ngocmx.com/api
     depends_on:
       - backend
 
 volumes:
   postgres_data:
-

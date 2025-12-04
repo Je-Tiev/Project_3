@@ -79,8 +79,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
         policy.WithOrigins(
+            "https://52.221.241.199.nip.io",
             "http://localhost:3000",
-            "http://localhost:5173",     // <--- thêm (vite)
+            "http://localhost:5173",     
             "http://127.0.0.1:5173",
             "https://localhost:5173"     // nếu bạn chạy FE trên https
         )
