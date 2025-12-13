@@ -17,6 +17,7 @@ using Paperless_Meeting.Services.Auth;
 using Paperless_Meeting.Services.Document;
 using Paperless_Meeting.Services.Meeting;
 using Paperless_Meeting.Services.Participant;
+using Paperless_Meeting.Services.Poll;
 
 var builder = WebApplication.CreateBuilder(args);
 // --- Bật logging đầy đủ cho console ---
@@ -83,7 +84,7 @@ builder.Services.AddCors(options =>
             "http://localhost:3000",
             "http://localhost:5173",     
             "http://127.0.0.1:5173",
-            "https://localhost:5173"     // nếu bạn chạy FE trên https
+            "https://localhost:5173"     // nếu chạy FE trên https
         )
         .AllowAnyMethod()
         .AllowAnyHeader()
@@ -96,6 +97,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IParticipantService, ParticipantService>();
+builder.Services.AddScoped<IPollService, PollService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
