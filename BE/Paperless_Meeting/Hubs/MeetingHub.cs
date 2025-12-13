@@ -38,7 +38,7 @@ namespace Paperless_Meeting.Hubs
             _logger.LogWarning("[Hub Warning] User ID claim not found or invalid. ConnectionId={ConnectionId}", Context.ConnectionId);
             throw new HubException("User ID claim not found or invalid.");
         }
-
+        // Tham gia phòng họp
         public async Task JoinRoom(int meetingId)
         {
             _logger.LogInformation("[HUB INFO] JoinRoom called: MeetingId={MeetingId}, Connection={ConnectionId}", meetingId, Context.ConnectionId);
@@ -46,7 +46,7 @@ namespace Paperless_Meeting.Hubs
             {
                 var userId = GetUserId();
                 _logger.LogDebug("[DEBUG] UserId from token: {UserId}", userId);
-
+                // 1. Lấy thông tin cuộc họp
                 var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
                 if (meeting == null)
                 {
@@ -55,20 +55,20 @@ namespace Paperless_Meeting.Hubs
                 }
 
                 _logger.LogDebug("[DEBUG] Meeting RoomId={RoomId}, Start={Start}, End={End}", meeting.RoomId, meeting.StartTime, meeting.EndTime);
-
+                // 2. Kiểm tra quyền tham gia
                 if (string.IsNullOrEmpty(meeting.RoomId))
                 {
                     _logger.LogWarning("[DEBUG] Meeting RoomId is null or empty");
                     throw new HubException("Cuộc họp chưa được cấu hình RoomId.");
                 }
-
+                // 3. Kiểm tra thời gian cuộc họp
                 var now = DateTime.UtcNow;
                 if (now < meeting.StartTime || now > meeting.EndTime)
                 {
                     _logger.LogWarning("[DEBUG] Current UTC time {Now} is outside meeting time", now);
                     throw new HubException("Hiện không phải thời gian diễn ra cuộc họp.");
                 }
-
+                // 4. Kiểm tra người dùng có trong danh sách tham gia không
                 var participants = await _participantService.GetMeetingParticipantsAsync(meetingId);
                 if (participants == null || !participants.Any(p => p.UserId == userId))
                 {
@@ -76,24 +76,25 @@ namespace Paperless_Meeting.Hubs
                     _logger.LogWarning("[DEBUG] Participants: {ParticipantIds}", participantIds);
                     throw new HubException("Bạn không có quyền tham gia cuộc họp này.");
                 }
-
+                // 5. Thêm người dùng vào group SignalR
                 var roomName = meeting.RoomId;
                 await Groups.AddToGroupAsync(Context.ConnectionId, roomName);
-
+                // 6. Quản lý kết nối 
+                // roomDict: <ConnectionId, UserId>
                 var roomDict = _roomConnections.GetOrAdd(roomName, _ => new ConcurrentDictionary<string, int>());
                 roomDict[Context.ConnectionId] = userId;
 
                 var userFullName = Context.User?.FindFirst(ClaimTypes.Name)?.Value
                                    ?? Context.User?.FindFirst(ClaimTypes.GivenName)?.Value
                                    ?? $"User_{userId}";
-
+                // 7. Thông báo cho các thành viên khác trong phòng
                 await Clients.OthersInGroup(roomName).SendAsync("UserJoined", new
                 {
                     userId,
                     connectionId = Context.ConnectionId,
                     fullName = userFullName
                 });
-
+                // 8. Gửi danh sách thành viên hiện có trong phòng cho người mới tham gia
                 var existingConnections = roomDict
                     .Where(kvp => kvp.Key != Context.ConnectionId)
                     .Select(kvp => new
@@ -105,7 +106,7 @@ namespace Paperless_Meeting.Hubs
                     .ToList();
 
                 await Clients.Caller.SendAsync("ExistingParticipants", existingConnections);
-
+                // 9. Gửi xác nhận đã tham gia phòng
                 await Clients.Caller.SendAsync("JoinedRoom", new
                 {
                     roomName,
@@ -144,9 +145,11 @@ namespace Paperless_Meeting.Hubs
             await Clients.Client(targetConnectionId).SendAsync("ReceiveSignal", senderId, signal);
         }
 
+        // Gửi tín hiệu đến tất cả thành viên trong phòng (trừ người gửi)
         public async Task BroadcastSignal(string roomName, object signal)
             => await Clients.OthersInGroup(roomName).SendAsync("ReceiveBroadcastSignal", Context.ConnectionId, signal);
 
+        // Gửi tin nhắn trong phòng họp
         public async Task SendMessage(int meetingId, string message)
         {
             var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
@@ -164,7 +167,7 @@ namespace Paperless_Meeting.Hubs
 
             if (!_roomConnections.TryGetValue(roomName, out var roomDict) || !roomDict.ContainsKey(Context.ConnectionId))
                 throw new HubException($"Phòng '{roomName}' không tồn tại.");
-
+            
             await Clients.Group(roomName).SendAsync("ReceiveMessage", new
             {
                 connectionId = Context.ConnectionId,
@@ -177,6 +180,7 @@ namespace Paperless_Meeting.Hubs
             _logger.LogInformation("[HUB INFO] User {UserId} sent message to room {RoomName}: {Message}", userId, roomName, message);
         }
 
+        // Thay đổi trạng thái media (âm thanh, video)
         public async Task ToggleMedia(string roomName, string type, bool enabled)
         {
             if (!_roomConnections.TryGetValue(roomName, out var roomDict) || !roomDict.ContainsKey(Context.ConnectionId))
@@ -193,6 +197,7 @@ namespace Paperless_Meeting.Hubs
                                     Context.ConnectionId, type, enabled, roomName);
         }
 
+        // Chia sẻ màn hình
         public async Task StartScreenShare(int meetingId)
         {
             var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
@@ -229,6 +234,7 @@ namespace Paperless_Meeting.Hubs
             _logger.LogInformation("[HUB INFO] User {ConnectionId} stopped screen share in room {RoomName}", Context.ConnectionId, meeting.RoomId);
         }
 
+        // Xử lý khi ngắt kết nối
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var connectionId = Context.ConnectionId;

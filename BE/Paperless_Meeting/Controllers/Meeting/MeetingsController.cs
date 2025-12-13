@@ -7,7 +7,7 @@ using System.Security.Claims;
 using Paperless_Meeting.Services.Meeting;
 using Paperless_Meeting.Services.Participant;
 using Paperless_Meeting.Repositories.Participant;
-using Paperless_Meeting.Migrations;
+
 namespace Paperless_Meeting.Controllers.Meeting
 {
     [ApiController]
