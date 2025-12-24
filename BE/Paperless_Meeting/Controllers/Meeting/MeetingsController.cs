@@ -30,6 +30,19 @@ namespace Paperless_Meeting.Controllers.Meeting
             return Ok(meetings);
         }
 
+        [HttpGet("user/my-meetings")]
+        public async Task<IActionResult> GetMyMeetings()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (userId == 0)
+            {
+                return Unauthorized(new { message = "Người dùng không hợp lệ." });
+            }
+
+            var meetings = await _meetingService.GetMeetingsByUserAsync(userId);
+            return Ok(meetings);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMeetingById(int id)
         {
@@ -99,6 +112,23 @@ namespace Paperless_Meeting.Controllers.Meeting
             return NoContent(); 
         }
 
+        [HttpPost("{id}/extend")]
+        [Authorize]
+        public async Task<IActionResult> ExtendMeeting(int id)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (userId == 0)
+            {
+                return Unauthorized(new { message = "Người dùng không hợp lệ." });
+            }
+
+            var success = await _meetingService.ExtendMeetingAsync(id, userId);
+            if (!success) 
+                return BadRequest(new { message = "Không thể gia hạn cuộc họp. Chỉ Host của cuộc họp mới có quyền gia hạn hoặc cuộc họp không tồn tại." });
+            
+            return Ok(new { message = "Gia hạn cuộc họp thêm 1 tiếng thành công." });
+        }
+        
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> DeleteMeeting(int id)

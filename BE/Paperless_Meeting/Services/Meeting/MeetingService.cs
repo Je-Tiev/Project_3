@@ -147,5 +147,22 @@ namespace Paperless_Meeting.Services.Meeting
 
             return meetings;
         }
+        
+        public async Task<bool> ExtendMeetingAsync(int meetingId, int userId)
+        {
+            var meeting = await _context.Meetings
+                .FirstOrDefaultAsync(m => m.MeetingId == meetingId);
+
+            if (meeting == null) return false;
+
+            // Kiểm tra xem người dùng có phải là Host của cuộc họp không
+            if (meeting.CreatedByUserId != userId) return false;
+
+            // Gia hạn thêm 1 tiếng
+            meeting.EndTime = meeting.EndTime.AddHours(1);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
