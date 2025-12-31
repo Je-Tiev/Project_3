@@ -198,6 +198,7 @@ namespace Paperless_Meeting.Hubs
         }
 
         // Chia sẻ màn hình
+        private static readonly ConcurrentDictionary<string, string> _roomScreenShares = new();
         public async Task StartScreenShare(int meetingId)
         {
             var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
@@ -212,6 +213,31 @@ namespace Paperless_Meeting.Hubs
                 connectionId = Context.ConnectionId,
                 timestamp = DateTime.Now
             });
+
+            var roomName = meeting.RoomId;
+             if (_roomScreenShares.TryGetValue(roomName, out var currentSharerId))
+                {
+                    // Nếu người share không phải là chính mình thì chặn
+                    if (currentSharerId != Context.ConnectionId)
+                    {
+                        throw new HubException("Người khác đang chia sẻ màn hình.");
+                    }
+                }
+                else
+                {
+                    // Thử claim quyền share
+                    if (!_roomScreenShares.TryAdd(roomName, Context.ConnectionId))
+                    {
+                        throw new HubException("Có người vừa bắt đầu chia sẻ. Vui lòng thử lại.");
+                    }
+                }
+
+                // 2. Thông báo cho người khác
+                await Clients.OthersInGroup(roomName).SendAsync("ScreenShareStarted", new
+                {
+                    connectionId = Context.ConnectionId,
+                    timestamp = DateTime.Now
+                });
 
             _logger.LogInformation("[HUB INFO] User {ConnectionId} started screen share in room {RoomName}", Context.ConnectionId, meeting.RoomId);
         }
@@ -230,6 +256,18 @@ namespace Paperless_Meeting.Hubs
                 connectionId = Context.ConnectionId,
                 timestamp = DateTime.Now
             });
+            var roomName = meeting.RoomId;
+            if (_roomScreenShares.TryGetValue(roomName, out var currentSharerId) && currentSharerId == Context.ConnectionId)
+                {
+                    _roomScreenShares.TryRemove(roomName, out _);
+                    
+                    await Clients.OthersInGroup(roomName).SendAsync("ScreenShareStopped", new
+                    {
+                        connectionId = Context.ConnectionId,
+                        timestamp = DateTime.Now
+                    });
+                }
+            
 
             _logger.LogInformation("[HUB INFO] User {ConnectionId} stopped screen share in room {RoomName}", Context.ConnectionId, meeting.RoomId);
         }
