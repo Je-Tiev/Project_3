@@ -50,6 +50,32 @@ namespace Paperless_Meeting.Services.Auth
             return null;
         }
 
+        public async Task<string?> RegisterAdminAsync(RegisterRequestDto registerDto)
+        {
+            if (await _context.Users.AnyAsync(u => u.Username == registerDto.Username))
+            {
+                return "Tên đăng nhập đã tồn tại.";
+            }
+
+            if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
+            {
+                return "Email đã được sử dụng.";
+            }
+
+            var user = new User
+            {
+                FullName = registerDto.FullName,
+                Username = registerDto.Username,
+                Email = registerDto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                DepartmentId = registerDto.DepartmentID,
+                Role = User.UserRole.Admin
+            };
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+            return null;
+        }
+        
         public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == loginDto.Username);
@@ -199,6 +225,112 @@ namespace Paperless_Meeting.Services.Auth
                 DepartmentId = user.DepartmentId,
                 DepartmentName = user.Department?.DepartmentName
             };
+        }
+
+        public async Task<string?> UpdateUserProfileAsync(int userId, UpdateUserDto updateDto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                return "Người dùng không tồn tại.";
+            }
+
+            // Kiểm tra email nếu được cập nhật
+            if (!string.IsNullOrWhiteSpace(updateDto.Email) && updateDto.Email != user.Email)
+            {
+                if (await _context.Users.AnyAsync(u => u.Email == updateDto.Email))
+                {
+                    return "Email đã được sử dụng.";
+                }
+                user.Email = updateDto.Email;
+            }
+
+            // Cập nhật FullName
+            if (!string.IsNullOrWhiteSpace(updateDto.FullName))
+            {
+                user.FullName = updateDto.FullName;
+            }
+
+            // Cập nhật Department
+            if (updateDto.DepartmentId.HasValue)
+            {
+                var department = await _context.Set<Department>().FindAsync(updateDto.DepartmentId);
+                if (department == null)
+                {
+                    return "Bộ phận không tồn tại.";
+                }
+                user.DepartmentId = updateDto.DepartmentId.Value;
+            }
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return null;
+        }
+
+        public async Task<string?> AdminUpdateUserAsync(int userId, UpdateUserDto updateDto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                return "Người dùng không tồn tại.";
+            }
+
+            // Kiểm tra email nếu được cập nhật
+            if (!string.IsNullOrWhiteSpace(updateDto.Email) && updateDto.Email != user.Email)
+            {
+                if (await _context.Users.AnyAsync(u => u.Email == updateDto.Email && u.UserId != userId))
+                {
+                    return "Email đã được sử dụng.";
+                }
+                user.Email = updateDto.Email;
+            }
+
+            // Cập nhật FullName
+            if (!string.IsNullOrWhiteSpace(updateDto.FullName))
+            {
+                user.FullName = updateDto.FullName;
+            }
+
+            // Cập nhật Department
+            if (updateDto.DepartmentId.HasValue)
+            {
+                var department = await _context.Set<Department>().FindAsync(updateDto.DepartmentId);
+                if (department == null)
+                {
+                    return "Bộ phận không tồn tại.";
+                }
+                user.DepartmentId = updateDto.DepartmentId.Value;
+            }
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return null;
+        }
+
+        public async Task<string?> AdminUpdateUserRoleAsync(int userId, string role)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                return "Người dùng không tồn tại.";
+            }
+
+            // Kiểm tra role hợp lệ
+            if (!Enum.TryParse<User.UserRole>(role, true, out var userRole))
+            {
+                return "Role không hợp lệ. Các role hợp lệ: User, Admin, SuperAdmin.";
+            }
+
+            user.Role = userRole;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return null;
         }
         
         private string CreateJwtToken(User user, DateTime expiry)
