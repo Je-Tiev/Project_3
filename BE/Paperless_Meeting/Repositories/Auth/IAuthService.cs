@@ -11,4 +11,7 @@ public interface IAuthService
     Task<bool> RevokeTokenAsync(string refreshToken);
     Task<IEnumerable<UserResponseDto>> GetAllUsersAsync();
     Task<UserResponseDto?> GetUserByIdAsync(int userId);
+    Task<string?> UpdateUserProfileAsync(int userId, UpdateUserDto updateDto);
+    Task<string?> AdminUpdateUserAsync(int userId, UpdateUserDto updateDto);
+    Task<string?> AdminUpdateUserRoleAsync(int userId, string role);
 }
