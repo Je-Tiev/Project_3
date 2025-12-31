@@ -220,7 +220,6 @@ namespace Paperless_Meeting.Hubs
         }
 
         // Chia sẻ màn hình
-        private static readonly ConcurrentDictionary<string, string> _roomScreenShares = new();
         public async Task StartScreenShare(int meetingId)
         {
             var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
