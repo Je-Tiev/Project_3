@@ -220,6 +220,7 @@ namespace Paperless_Meeting.Hubs
         }
 
         // Chia sẻ màn hình
+        private static readonly ConcurrentDictionary<string, string> _roomScreenShares = new();
         public async Task StartScreenShare(int meetingId)
         {
             var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
@@ -244,6 +245,31 @@ namespace Paperless_Meeting.Hubs
                 timestamp = DateTime.Now
             });
 
+            var roomName = meeting.RoomId;
+             if (_roomScreenShares.TryGetValue(roomName, out var currentSharerId))
+                {
+                    // Nếu người share không phải là chính mình thì chặn
+                    if (currentSharerId != Context.ConnectionId)
+                    {
+                        throw new HubException("Người khác đang chia sẻ màn hình.");
+                    }
+                }
+                else
+                {
+                    // Thử claim quyền share
+                    if (!_roomScreenShares.TryAdd(roomName, Context.ConnectionId))
+                    {
+                        throw new HubException("Có người vừa bắt đầu chia sẻ. Vui lòng thử lại.");
+                    }
+                }
+
+                // 2. Thông báo cho người khác
+                await Clients.OthersInGroup(roomName).SendAsync("ScreenShareStarted", new
+                {
+                    connectionId = Context.ConnectionId,
+                    timestamp = DateTime.Now
+                });
+
             _logger.LogInformation("[HUB INFO] User {ConnectionId} started screen share in room {RoomName}", Context.ConnectionId, meeting.RoomId);
         }
 
@@ -253,14 +279,19 @@ namespace Paperless_Meeting.Hubs
             if (meeting == null)
                 throw new HubException("Không tìm thấy cuộc họp.");
 
-            // Kiểm tra xem người gọi hàm này có phải người đang share không
+            // 1. Kiểm tra user có trong phòng không
+            if (!_roomConnections.TryGetValue(meeting.RoomId, out var roomDict) || !roomDict.ContainsKey(Context.ConnectionId))
+                throw new HubException("Bạn không tham gia phòng.");
+
+            // 2. Kiểm tra người gọi có phải là người đang share không
             if (_roomScreenShares.TryGetValue(meeting.RoomId, out var currentSharerId))
             {
-                // Nếu đúng là người đang share thì mới xóa và thông báo
                 if (currentSharerId == Context.ConnectionId)
                 {
-                    _roomScreenShares.TryRemove(meeting.RoomId, out _); // [FIX]: Xóa trạng thái share
+                    // Xóa trạng thái
+                    _roomScreenShares.TryRemove(meeting.RoomId, out _);
                     
+                    // Chỉ gửi thông báo 1 lần tại đây
                     await Clients.OthersInGroup(meeting.RoomId).SendAsync("ScreenShareStopped", new
                     {
                         connectionId = Context.ConnectionId,
@@ -270,6 +301,8 @@ namespace Paperless_Meeting.Hubs
                     _logger.LogInformation("[HUB INFO] User {ConnectionId} stopped screen share", Context.ConnectionId);
                 }
             }
+
+            _logger.LogInformation("[HUB INFO] User {ConnectionId} stopped screen share in room {RoomName}", Context.ConnectionId, meeting.RoomId);
         }
 
         // Xử lý khi ngắt kết nối
