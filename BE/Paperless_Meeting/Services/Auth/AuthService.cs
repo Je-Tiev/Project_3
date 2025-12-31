@@ -50,6 +50,32 @@ namespace Paperless_Meeting.Services.Auth
             return null;
         }
 
+        public async Task<string?> RegisterAdminAsync(RegisterRequestDto registerDto)
+        {
+            if (await _context.Users.AnyAsync(u => u.Username == registerDto.Username))
+            {
+                return "Tên đăng nhập đã tồn tại.";
+            }
+
+            if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
+            {
+                return "Email đã được sử dụng.";
+            }
+
+            var user = new User
+            {
+                FullName = registerDto.FullName,
+                Username = registerDto.Username,
+                Email = registerDto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                DepartmentId = registerDto.DepartmentID,
+                Role = User.UserRole.Admin
+            };
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+            return null;
+        }
+        
         public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == loginDto.Username);

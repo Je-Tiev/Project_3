@@ -16,8 +16,8 @@ namespace Paperless_Meeting.Controllers.Auth
             _authService = authService;
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequestDto registerDto)
+        [HttpPost("register/user")]
+        public async Task<IActionResult> RegisterUser(RegisterRequestDto registerDto)
         {
             var errorMessage = await _authService.RegisterAsync(registerDto);
 
@@ -29,6 +29,19 @@ namespace Paperless_Meeting.Controllers.Auth
             return Ok("Đăng ký thành công.");
         }
 
+        [HttpPost("register/admin")]
+        public async Task<IActionResult> RegisterAdmin(RegisterRequestDto registerDto)
+        {
+            var errorMessage = await _authService.RegisterAdminAsync(registerDto);
+
+            if (errorMessage != null)
+            {
+                return BadRequest(errorMessage);
+            }
+            
+            return Ok("Đăng ký thành công.");
+        }
+        
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto loginDto)
         {
