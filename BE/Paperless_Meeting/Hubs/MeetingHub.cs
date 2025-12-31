@@ -5,7 +5,7 @@ using Paperless_Meeting.Repositories.Meeting;
 using Paperless_Meeting.Repositories.Participant;
 using System.Security.Claims;
 using System.Collections.Concurrent;
-using System.Text.Json;
+using Paperless_Meeting.Services.Poll;
 
 namespace Paperless_Meeting.Hubs
 {
@@ -14,16 +14,21 @@ namespace Paperless_Meeting.Hubs
     {
         private readonly IMeetingService _meetingService;
         private readonly IParticipantService _participantService;
+        private readonly IPollService _pollService;
         private readonly ILogger<MeetingHub> _logger;
         // <RoomName, <ConnectionId, UserId>>
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, int>> _roomConnections = new();
+        // <RoomName, ScreenShareConnectionId>
+        private static readonly ConcurrentDictionary<string, string> _roomScreenShares = new();
 
         public MeetingHub(IMeetingService meetingService,
                           IParticipantService participantService,
+                          IPollService pollService,
                           ILogger<MeetingHub> logger)
         {
             _meetingService = meetingService;
             _participantService = participantService;
+            _pollService = pollService;
             _logger = logger;
         }
 
@@ -106,6 +111,23 @@ namespace Paperless_Meeting.Hubs
                     .ToList();
 
                 await Clients.Caller.SendAsync("ExistingParticipants", existingConnections);
+                // 8a. Kiểm tra có ai đang chia sẻ màn hình
+                if (_roomScreenShares.TryGetValue(roomName, out string? sharerConnectionId))
+                {
+                    // Nếu phòng đang có người share, báo ngay cho người mới vào biết
+                    await Clients.Caller.SendAsync("ScreenShareStarted", new
+                    {
+                        connectionId = sharerConnectionId, 
+                        isResync = true, // Cờ để frontend biết đây là đồng bộ lại trạng thái cũ
+                        timestamp = DateTime.Now
+                    });
+                }
+                // 8b. Lấy các poll đang hoạt động trong cuộc họp
+                var activePolls = await _pollService.GetActivePollsByMeetingIdAsync(meetingId);
+                if (activePolls != null && activePolls.Any())
+                {
+                    await Clients.Caller.SendAsync("SyncCurrentPolls", activePolls);
+                }
                 // 9. Gửi xác nhận đã tham gia phòng
                 await Clients.Caller.SendAsync("JoinedRoom", new
                 {
@@ -206,7 +228,16 @@ namespace Paperless_Meeting.Hubs
 
             if (!_roomConnections.TryGetValue(meeting.RoomId, out var roomDict) || !roomDict.ContainsKey(Context.ConnectionId))
                 throw new HubException("Bạn không tham gia phòng để chia sẻ màn hình.");
+            if (_roomScreenShares.ContainsKey(meeting.RoomId))
+            {
+                throw new HubException("Đang có người chia sẻ màn hình. Vui lòng đợi.");
+            }
 
+            if (!_roomScreenShares.TryAdd(meeting.RoomId, Context.ConnectionId))
+            {
+                throw new HubException("Không thể bắt đầu chia sẻ lúc này.");
+            }
+           
             await Clients.OthersInGroup(meeting.RoomId).SendAsync("ScreenShareStarted", new
             {
                 connectionId = Context.ConnectionId,
@@ -222,16 +253,23 @@ namespace Paperless_Meeting.Hubs
             if (meeting == null)
                 throw new HubException("Không tìm thấy cuộc họp.");
 
-            if (!_roomConnections.TryGetValue(meeting.RoomId, out var roomDict) || !roomDict.ContainsKey(Context.ConnectionId))
-                throw new HubException("Bạn không tham gia phòng để dừng chia sẻ màn hình.");
-
-            await Clients.OthersInGroup(meeting.RoomId).SendAsync("ScreenShareStopped", new
+            // Kiểm tra xem người gọi hàm này có phải người đang share không
+            if (_roomScreenShares.TryGetValue(meeting.RoomId, out var currentSharerId))
             {
-                connectionId = Context.ConnectionId,
-                timestamp = DateTime.Now
-            });
-
-            _logger.LogInformation("[HUB INFO] User {ConnectionId} stopped screen share in room {RoomName}", Context.ConnectionId, meeting.RoomId);
+                // Nếu đúng là người đang share thì mới xóa và thông báo
+                if (currentSharerId == Context.ConnectionId)
+                {
+                    _roomScreenShares.TryRemove(meeting.RoomId, out _); // [FIX]: Xóa trạng thái share
+                    
+                    await Clients.OthersInGroup(meeting.RoomId).SendAsync("ScreenShareStopped", new
+                    {
+                        connectionId = Context.ConnectionId,
+                        timestamp = DateTime.Now
+                    });
+                    
+                    _logger.LogInformation("[HUB INFO] User {ConnectionId} stopped screen share", Context.ConnectionId);
+                }
+            }
         }
 
         // Xử lý khi ngắt kết nối
@@ -255,6 +293,20 @@ namespace Paperless_Meeting.Hubs
                     });
 
                     _logger.LogInformation("[HUB INFO] User {UserId} left room {RoomName}", userId, roomName);
+                }
+
+                if (_roomScreenShares.TryGetValue(roomName, out var sharerId) && sharerId == connectionId)
+                {
+                    _roomScreenShares.TryRemove(roomName, out _); // Xóa trạng thái share
+                    
+                    // Báo cho cả phòng biết để tắt màn hình share
+                    await Clients.Group(roomName).SendAsync("ScreenShareStopped", new
+                    {
+                        connectionId = connectionId,
+                        reason = "Disconnected",
+                        timestamp = DateTime.Now
+                    });
+                    _logger.LogInformation("[HUB INFO] Sharer {ConnectionId} disconnected. Auto-stopped share.", connectionId);
                 }
 
                 if (roomDict.IsEmpty)

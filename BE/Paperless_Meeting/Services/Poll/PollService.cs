@@ -61,6 +61,18 @@ namespace Paperless_Meeting.Services.Poll
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<List<PollDetailDto>> GetActivePollsByMeetingIdAsync(int meetingId)
+        {
+            var activePolls = await _context.Polls
+                .Where(p => p.MeetingId == meetingId && p.Status == Models.Poll.PollStatus.Open) // Chỉ lấy Open
+                .Include(p => p.UserVotes) // Include để đếm số vote hiện tại
+                .OrderBy(p => p.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return activePolls.Select(p => MapToDetailDto(p)).ToList();
+        }
+        
         public async Task<bool> SubmitVoteAsync(int pollId, int userId, bool choice)
         {
             // Kiểm tra Poll có tồn tại và đang mở không

@@ -9,7 +9,7 @@ namespace Paperless_Meeting.Services.Poll
         Task<bool> SubmitVoteAsync(int pollId, int userId, bool choice);
         Task<bool> HasUserVotedAsync(int pollId, int userId);
         Task<bool> ClosePollAsync(int pollId);
-        
+        Task<List<PollDetailDto>> GetActivePollsByMeetingIdAsync(int meetingId);
         Task<List<PollDetailDto>> GetPollsByMeetingIdAsync(int meetingId);
     }
 }
