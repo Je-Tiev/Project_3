@@ -14,4 +14,8 @@ public class PollDetailDto
         public int TotalVotes { get; set; }
         public int YesVotes { get; set; }
         public int NoVotes { get; set; }
+
+        public bool UserHasVoted { get; set; } 
+        public bool? UserChoice { get; set; }
+        public List<VoteDetailDto> Votes { get; set; } = new List<VoteDetailDto>();
     }
