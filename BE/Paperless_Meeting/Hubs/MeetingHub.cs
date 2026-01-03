@@ -123,7 +123,7 @@ namespace Paperless_Meeting.Hubs
                     });
                 }
                 // 8b. Lấy các poll đang hoạt động trong cuộc họp
-                var activePolls = await _pollService.GetActivePollsByMeetingIdAsync(meetingId);
+                var activePolls = await _pollService.GetActivePollsByMeetingIdAsync(meetingId, userId);
                 if (activePolls != null && activePolls.Any())
                 {
                     await Clients.Caller.SendAsync("SyncCurrentPolls", activePolls);

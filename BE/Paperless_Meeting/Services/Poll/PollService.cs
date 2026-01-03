@@ -38,39 +38,37 @@ namespace Paperless_Meeting.Services.Poll
                 CreatedAt = poll.CreatedAt,
                 TotalVotes = 0,
                 YesVotes = 0,
-                NoVotes = 0
+                NoVotes = 0,
+                UserHasVoted = false,
+                UserChoice = null,
+                Votes = new List<VoteDetailDto>()
             };
         }
 
-        public async Task<PollDetailDto?> GetPollByIdAsync(int pollId)
+        public async Task<PollDetailDto?> GetPollByIdAsync(int pollId, int currentUserId)
         {
-            return await _context.Polls
+           var poll = await _context.Polls
                 .AsNoTracking()
-                .Where(p => p.PollId == pollId)
-                .Select(p => new PollDetailDto
-                {
-                    PollId = p.PollId,
-                    MeetingId = p.MeetingId,
-                    Question = p.Question,
-                    Status = p.Status.ToString(), 
-                    CreatedAt = p.CreatedAt,
-                    YesVotes = p.UserVotes.Count(v => v.Choice == true), 
-                    NoVotes = p.UserVotes.Count(v => v.Choice == false),
-                    TotalVotes = p.UserVotes.Count()
-                })
-                .FirstOrDefaultAsync();
+                .Include(p => p.UserVotes)
+                    .ThenInclude(uv => uv.User) // Join bảng User để lấy tên
+                .FirstOrDefaultAsync(p => p.PollId == pollId);
+
+            if (poll == null) return null;
+
+            return MapToDetailDto(poll, currentUserId);
         }
 
-        public async Task<List<PollDetailDto>> GetActivePollsByMeetingIdAsync(int meetingId)
+        public async Task<List<PollDetailDto>> GetActivePollsByMeetingIdAsync(int meetingId, int currentUserId)
         {
             var activePolls = await _context.Polls
                 .Where(p => p.MeetingId == meetingId && p.Status == Models.Poll.PollStatus.Open) // Chỉ lấy Open
                 .Include(p => p.UserVotes) // Include để đếm số vote hiện tại
+                .ThenInclude(uv => uv.User)
                 .OrderBy(p => p.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync();
 
-            return activePolls.Select(p => MapToDetailDto(p)).ToList();
+            return activePolls.Select(p => MapToDetailDto(p, currentUserId)).ToList();
         }
         
         public async Task<bool> SubmitVoteAsync(int pollId, int userId, bool choice)
@@ -112,28 +110,46 @@ namespace Paperless_Meeting.Services.Poll
             return true;
         }
 
-        public async Task<List<PollDetailDto>> GetPollsByMeetingIdAsync(int meetingId)
+        public async Task<List<PollDetailDto>> GetPollsByMeetingIdAsync(int meetingId, int currentUserId)
         {
             var polls = await _context.Polls
                 .Where(p => p.MeetingId == meetingId)
                 .Include(p => p.UserVotes)
+                .ThenInclude(uv => uv.User)
                 .OrderByDescending(p => p.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync();
 
-            return polls.Select(p => MapToDetailDto(p)).ToList();
+            return polls.Select(p => MapToDetailDto(p, currentUserId)).ToList();
         }
 
         // map dữ liệu và tính toán vote
-        private PollDetailDto MapToDetailDto(Models.Poll poll)
+        private PollDetailDto MapToDetailDto(Models.Poll poll, int currentUserId)
         {
             int yesCount = 0;
             int noCount = 0;
+            bool userHasVoted = false;
+            bool? userChoice = null;
+            var voteDetails = new List<VoteDetailDto>();
 
             if (poll.UserVotes != null)
             {
                 yesCount = poll.UserVotes.Count(v => v.Choice == true);
                 noCount = poll.UserVotes.Count(v => v.Choice == false);
+
+                var myVote = poll.UserVotes.FirstOrDefault(v => v.UserId == currentUserId);
+                if (myVote != null)
+                {
+                    userHasVoted = true;
+                    userChoice = myVote.Choice;
+                }
+                voteDetails = poll.UserVotes.Select(v => new VoteDetailDto
+                {
+                    UserId = v.UserId,
+                    FullName = v.User != null ? v.User.FullName : $"User {v.UserId}", 
+                    Choice = v.Choice,
+                    VotedAt = v.VotedAt
+                }).ToList();
             }
 
             return new PollDetailDto
@@ -145,7 +161,10 @@ namespace Paperless_Meeting.Services.Poll
                 CreatedAt = poll.CreatedAt,
                 YesVotes = yesCount,
                 NoVotes = noCount,
-                TotalVotes = yesCount + noCount
+                TotalVotes = yesCount + noCount,
+                UserHasVoted = userHasVoted,
+                UserChoice = userChoice,
+                Votes = voteDetails
             };
         }
     }

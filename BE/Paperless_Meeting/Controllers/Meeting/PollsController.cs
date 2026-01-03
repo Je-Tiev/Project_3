@@ -31,6 +31,16 @@ namespace Paperless_Meeting.Controllers.Poll
             _hubContext = hubContext;
         }
 
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(userIdClaim, out int userId))
+            {
+                return userId;
+            }
+            throw new UnauthorizedAccessException("Invalid User ID in Token");
+        }
+
         // 1. TẠO POLL
         [HttpPost]
         [Authorize(Roles = "Admin,SuperAdmin")]
@@ -63,8 +73,10 @@ namespace Paperless_Meeting.Controllers.Poll
         [HttpPost("{pollId}/vote")]
         public async Task<IActionResult> SubmitVote(int pollId, [FromBody] PollVoteRequestDto requestDto)
         {
+            var userId = GetUserId();
+
             //Lấy thông tin Poll
-            var poll = await _pollService.GetPollByIdAsync(pollId);
+            var poll = await _pollService.GetPollByIdAsync(pollId, userId);
             if (poll == null) return NotFound("Không tìm thấy cuộc bình chọn.");
 
             // Kiểm tra trạng thái Poll (đóng hoặc quá thời gian cuộc họp)
@@ -73,14 +85,13 @@ namespace Paperless_Meeting.Controllers.Poll
 
             var meeting = await _meetingService.GetMeetingByIdAsync(poll.MeetingId);
             if (meeting == null) return NotFound("Không tìm thấy thông tin cuộc họp.");
+
             var currentTime = DateTime.UtcNow; 
             if (currentTime < meeting.StartTime)
                 return BadRequest("Cuộc họp chưa bắt đầu, chưa thể bình chọn.");
             
             if (currentTime > meeting.EndTime)
                 return BadRequest("Cuộc họp đã kết thúc, không thể bình chọn nữa.");
-
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             var participants = await _participantService.GetMeetingParticipantsAsync(poll.MeetingId);
             var isParticipant = participants.Any(p => p.UserId == userId);
@@ -99,19 +110,20 @@ namespace Paperless_Meeting.Controllers.Poll
             
             if (!success) return StatusCode(500, "Có lỗi xảy ra khi lưu phiếu bầu.");
 
+            var updatedPollStats = await _pollService.GetPollByIdAsync(pollId, userId);
             if (!string.IsNullOrEmpty(meeting.RoomId))
             {
-                var updatedPollStats = await _pollService.GetPollByIdAsync(pollId);
                 await _hubContext.Clients.Group(meeting.RoomId).SendAsync("UpdatePollStats", updatedPollStats);
             }
-            return Ok(new { message = "Bình chọn thành công.", choice = requestDto.Choice });
+            return Ok(new { message = "Bình chọn thành công.", choice = requestDto.Choice, data = updatedPollStats });
         }
 
         //lấy chi tiết Poll 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPollById(int id)
         {
-            var poll = await _pollService.GetPollByIdAsync(id);
+            var userId = GetUserId();
+            var poll = await _pollService.GetPollByIdAsync(id, userId);
             if (poll == null) return NotFound();
             return Ok(poll);
         }
@@ -121,7 +133,8 @@ namespace Paperless_Meeting.Controllers.Poll
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> ClosePoll(int id)
         {
-            var poll = await _pollService.GetPollByIdAsync(id);
+            var userId = GetUserId();
+            var poll = await _pollService.GetPollByIdAsync(id, userId);
             if (poll == null) return NotFound();
 
             var success = await _pollService.ClosePollAsync(id);
