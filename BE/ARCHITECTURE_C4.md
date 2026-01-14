@@ -13,7 +13,7 @@ Tài liệu này mô tả kiến trúc backend của hệ thống **Paperless Me
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Paperless Meeting System               │
-│                                                              │
+│                                                             │
 │  Hệ thống quản lý cuộc họp không giấy tờ, cho phép:        │
 │  - Quản lý người tham dự cuộc họp                          │
 │  - Chia sẻ và quản lý tài liệu                             │
@@ -30,7 +30,7 @@ Tài liệu này mô tả kiến trúc backend của hệ thống **Paperless Me
 | **Meeting Organizer** | Người tạo và quản lý cuộc họp | Tạo họp, quản lý tài liệu, thêm người tham dự |
 | **Meeting Participant** | Người tham gia cuộc họp | Xem tài liệu, bỏ phiếu, viết ghi chú, nghe ghi âm |
 | **Admin** | Quản trị viên hệ thống | Quản lý người dùng, tạo cuộc họp tự động |
-| **Frontend Web App** | Ứng dụng React/Vite | Gửi request HTTP, kết nối WebSocket (SignalR) |
+| **Frontend Web App** | Ứng dụng React/Vite | Gửi request HTTP, kết nối MeetingHub (SignalR) |
 | **PostgreSQL Database** | CSDL chính | Lưu trữ dữ liệu người dùng, cuộc họp, tài liệu |
 | **File Storage** | Lưu trữ tệp (Local/Cloud) | Lưu tài liệu, ghi âm |
 
@@ -49,7 +49,7 @@ Tài liệu này mô tả kiến trúc backend của hệ thống **Paperless Me
 │  │   React Web Application  │              │  │  File Storage   │ │
 │  │  - Pages & Components    │              │  │  (Documents,    │ │
 │  │  - API Client            │──────HTTP───→│→ │   Audio Files)  │ │
-│  │  - WebSocket Client      │  REST API    │  │                 │ │
+│  │  - WebSocket Client      │   REST API   │  │                 │ │
 │  │                          │←─ JSON/Data  │  └─────────────────┘ │
 │  └──────────────────────────┘              │                      │
 │           │                                 │  ┌─────────────────┐ │
