@@ -35,3 +35,6 @@ obj/
 # File môi trường (chứa mật khẩu/key - Cực quan trọng)
 .env
 *.env
+
+# Bỏ qua file kế hoạch dự án
+PLAN.md
