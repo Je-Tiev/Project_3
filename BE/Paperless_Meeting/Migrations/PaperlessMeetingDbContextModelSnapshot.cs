@@ -39,9 +39,19 @@ namespace Paperless_Meeting.Migrations
                     b.Property<int>("MeetingId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("SignedByUsers")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Summary")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ConclusionId");
 
@@ -105,15 +115,10 @@ namespace Paperless_Meeting.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DocumentId"));
 
-                    b.Property<string>("FileName")
+                    b.Property<string>("FilePath")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.Property<int>("MeetingId")
                         .HasColumnType("integer");
@@ -144,23 +149,25 @@ namespace Paperless_Meeting.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MeetingId"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("CreatedByUserId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
                     b.Property<int?>("PhysicalRoomId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("RoomId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
@@ -190,22 +197,16 @@ namespace Paperless_Meeting.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AudioId"));
 
-                    b.Property<string>("AudioPath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<float>("Duration")
-                        .HasColumnType("real");
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<int>("MeetingId")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("TranscribedText")
-                        .HasColumnType("text");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -217,6 +218,36 @@ namespace Paperless_Meeting.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("MeetingAudios");
+                });
+
+            modelBuilder.Entity("Paperless_Meeting.Models.MeetingChat", b =>
+                {
+                    b.Property<int>("ChatId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ChatId"));
+
+                    b.Property<int>("MeetingId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ChatId");
+
+                    b.HasIndex("MeetingId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MeetingChats");
                 });
 
             modelBuilder.Entity("Paperless_Meeting.Models.MeetingLog", b =>
@@ -253,20 +284,15 @@ namespace Paperless_Meeting.Migrations
             modelBuilder.Entity("Paperless_Meeting.Models.MeetingParticipant", b =>
                 {
                     b.Property<int>("MeetingId")
-                        .HasColumnType("integer")
-                        .HasColumnOrder(0);
+                        .HasColumnType("integer");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnOrder(1);
+                        .HasColumnType("integer");
 
-                    b.Property<string>("AssignedTask")
-                        .HasColumnType("text");
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsPresent")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("RoleInMeeting")
+                    b.Property<int>("Role")
                         .HasColumnType("integer");
 
                     b.HasKey("MeetingId", "UserId");
@@ -294,14 +320,18 @@ namespace Paperless_Meeting.Migrations
                     b.Property<int>("MeetingId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("NoteId");
 
-                    b.HasIndex("MeetingId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("MeetingId", "UserId")
+                        .IsUnique();
 
                     b.ToTable("Notes");
                 });
@@ -316,6 +346,9 @@ namespace Paperless_Meeting.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsSecret")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("MeetingId")
                         .HasColumnType("integer");
@@ -501,8 +534,6 @@ namespace Paperless_Meeting.Migrations
 
                     b.HasKey("VoteId");
 
-                    b.HasIndex("PollId");
-
                     b.HasIndex("UserId");
 
                     b.HasIndex("PollId", "UserId")
@@ -584,6 +615,25 @@ namespace Paperless_Meeting.Migrations
                     b.Navigation("Meeting");
 
                     b.Navigation("Speaker");
+                });
+
+            modelBuilder.Entity("Paperless_Meeting.Models.MeetingChat", b =>
+                {
+                    b.HasOne("Paperless_Meeting.Models.Meeting", "Meeting")
+                        .WithMany()
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Paperless_Meeting.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Meeting");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Paperless_Meeting.Models.MeetingLog", b =>

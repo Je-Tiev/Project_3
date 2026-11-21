@@ -8,6 +8,7 @@ public class PollDetailDto
         public int MeetingId { get; set; }
         public string Question { get; set; }
         public string Status { get; set; } // "Open" hoặc "Closed"
+        public bool IsSecret { get; set; }
         public DateTime CreatedAt { get; set; }
         
         // Kết quả thống kê

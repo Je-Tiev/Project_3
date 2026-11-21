@@ -7,4 +7,6 @@ public class PollCreateRequestDto
     public int MeetingId { get; set; }
     [Required]
     public string Question { get; set; }
+
+    public bool IsSecret { get; set; } = false;
 }

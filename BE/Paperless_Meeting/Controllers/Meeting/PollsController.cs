@@ -118,6 +118,15 @@ namespace Paperless_Meeting.Controllers.Poll
             return Ok(new { message = "Bình chọn thành công.", choice = requestDto.Choice, data = updatedPollStats });
         }
 
+        // Lấy tất cả Poll của cuộc họp
+        [HttpGet("meeting/{meetingId}")]
+        public async Task<IActionResult> GetPollsByMeeting(int meetingId)
+        {
+            var userId = GetUserId();
+            var polls = await _pollService.GetPollsByMeetingIdAsync(meetingId, userId);
+            return Ok(polls);
+        }
+
         //lấy chi tiết Poll 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPollById(int id)

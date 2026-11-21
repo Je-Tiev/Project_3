@@ -20,7 +20,13 @@ public class Conclusion
 
     [Required]
     public string Summary { get; set; }
+
+    public string Status { get; set; } = "Draft"; // "Draft", "Finalized"
+
+    public string? SignedByUsers { get; set; } // JSON list of signatures
         
     [Required]
     public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 }

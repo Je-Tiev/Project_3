@@ -21,6 +21,7 @@ namespace Paperless_Meeting.Services.Poll
             {
                 MeetingId = request.MeetingId,
                 Question = request.Question,
+                IsSecret = request.IsSecret,
                 VoteByUserId = creatorId,
                 Status = Models.Poll.PollStatus.Open,
                 CreatedAt = DateTime.UtcNow
@@ -35,6 +36,7 @@ namespace Paperless_Meeting.Services.Poll
                 MeetingId = poll.MeetingId,
                 Question = poll.Question,
                 Status = poll.Status.ToString(),
+                IsSecret = poll.IsSecret,
                 CreatedAt = poll.CreatedAt,
                 TotalVotes = 0,
                 YesVotes = 0,
@@ -152,8 +154,8 @@ namespace Paperless_Meeting.Services.Poll
                 }
                 voteDetails = poll.UserVotes.Select(v => new VoteDetailDto
                 {
-                    UserId = v.UserId,
-                    FullName = v.User != null ? v.User.FullName : $"User {v.UserId}", 
+                    UserId = poll.IsSecret ? 0 : v.UserId,
+                    FullName = poll.IsSecret ? "Đại biểu (Bỏ phiếu kín)" : (v.User != null ? v.User.FullName : $"User {v.UserId}"), 
                     Choice = v.Choice,
                     VotedAt = v.VotedAt
                 }).ToList();
@@ -165,6 +167,7 @@ namespace Paperless_Meeting.Services.Poll
                 MeetingId = poll.MeetingId,
                 Question = poll.Question,
                 Status = poll.Status.ToString(),
+                IsSecret = poll.IsSecret,
                 CreatedAt = poll.CreatedAt,
                 YesVotes = yesCount,
                 NoVotes = noCount,

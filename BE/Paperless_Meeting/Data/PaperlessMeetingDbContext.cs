@@ -22,6 +22,7 @@ public class PaperlessMeetingDbContext : DbContext
     public DbSet<Paperless_Meeting.Models.UserVote> UserVotes { get; set; }
     public DbSet<Paperless_Meeting.Models.RefreshToken> RefreshTokens { get; set; }
     public DbSet<Paperless_Meeting.Models.Room> Rooms { get; set; }
+    public DbSet<Paperless_Meeting.Models.MeetingChat> MeetingChats { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,6 +127,24 @@ public class PaperlessMeetingDbContext : DbContext
             .WithMany(r => r.Meetings)
             .HasForeignKey(m => m.PhysicalRoomId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Cấu hình bảng Chat
+        modelBuilder.Entity<MeetingChat>()
+            .HasOne(mc => mc.Meeting)
+            .WithMany()
+            .HasForeignKey(mc => mc.MeetingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MeetingChat>()
+            .HasOne(mc => mc.User)
+            .WithMany()
+            .HasForeignKey(mc => mc.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Đảm bảo mỗi đại biểu có 1 note duy nhất trong 1 cuộc họp
+        modelBuilder.Entity<Note>()
+            .HasIndex(n => new { n.MeetingId, n.UserId })
+            .IsUnique();
 
         // Seed danh mục phòng họp vật lý ban đầu
         modelBuilder.Entity<Room>().HasData(

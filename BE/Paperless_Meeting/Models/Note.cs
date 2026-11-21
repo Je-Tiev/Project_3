@@ -23,4 +23,6 @@ public class Note
         
     [Required]
     public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 }

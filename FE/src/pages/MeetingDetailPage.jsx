@@ -1,34 +1,77 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useApp } from "../contexts/AppContext";
 import { useMeetingWithWebRTC } from "../hook/useMeeting";
 import VideoTile from "../components/VideoTile";
-import { Mic, MicOff, Video, VideoOff, Share2, PhoneOff } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  Share2,
+  PhoneOff,
+  MessageSquare,
+  Vote,
+  Edit3,
+  FileCheck,
+  FileText,
+  X,
+  Users,
+} from "lucide-react";
+import { apiCall } from "../utils/api";
+import MeetingChatPanel from "../components/meeting/MeetingChatPanel";
+import MeetingPollsPanel from "../components/meeting/MeetingPollsPanel";
+import MeetingNotesPanel from "../components/meeting/MeetingNotesPanel";
+import MeetingConclusionPanel from "../components/meeting/MeetingConclusionPanel";
+import MeetingDocsPanel from "../components/meeting/MeetingDocsPanel";
 
 export default function MeetingDetailPage() {
   const { meetingId } = useParams();
-  const { currentUser } = useApp();
+  const { currentUser, meetings } = useApp();
   const navigate = useNavigate();
 
+  const [activePanel, setActivePanel] = useState(null); // 'chat' | 'polls' | 'notes' | 'conclusion' | 'docs' | null
+  const [meetingDetails, setMeetingDetails] = useState(null);
   const [showLeaveMessage, setShowLeaveMessage] = useState(false);
 
-  const handleLeaveMeeting = () => {
-    setShowLeaveMessage(true);
+  // Load meeting metadata to know host & title
+  useEffect(() => {
+    let isMounted = true;
+    const loadMeeting = async () => {
+      let found = meetings.find((m) => `${m.id}` === `${meetingId}` || `${m.meetingId}` === `${meetingId}`);
+      if (!found) {
+        try {
+          const res = await apiCall(`/Meetings/${meetingId}`, { method: "GET" });
+          if (res) found = res;
+        } catch (e) {
+          console.warn("Không thể tải thông tin cuộc họp:", e);
+        }
+      }
+      if (isMounted && found) {
+        setMeetingDetails(found);
+      }
+    };
 
-    setTimeout(() => {
-      navigate(-1); // quay về trang trước
-    }, 1000);
-  };
+    if (meetingId) {
+      loadMeeting();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [meetingId, meetings]);
 
   const {
     status,
     participants,
     remoteStreams,
+    messages,
     toggleCamera,
     toggleMicrophone,
     startScreenShare,
     stopScreenShare,
+    sendMessage,
+    connection,
     error,
     localStream,
     isMicOn,
@@ -36,104 +79,268 @@ export default function MeetingDetailPage() {
     isScreenSharing,
   } = useMeetingWithWebRTC(meetingId);
 
+  const handleLeaveMeeting = () => {
+    setShowLeaveMessage(true);
+    setTimeout(() => {
+      navigate("/");
+    }, 800);
+  };
+
+  const isHostOrAdmin =
+    currentUser?.role === "Admin" ||
+    currentUser?.role === "SuperAdmin" ||
+    meetingDetails?.createdByUserId === currentUser?.userId ||
+    meetingDetails?.createdBy === currentUser?.userId;
+
+  const togglePanel = (panelName) => {
+    setActivePanel((prev) => (prev === panelName ? null : panelName));
+  };
+
   if (status === "connecting" || status === "reconnecting")
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-900 text-white">
-        Connecting...
+      <div className="flex h-screen items-center justify-center bg-gray-950 text-white flex-col gap-3">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-red-600" />
+        <p className="text-gray-300">Đang kết nối vào phòng họp...</p>
       </div>
     );
 
   if (status === "error" || error)
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-900 text-red-500">
-        {error || "Error joining room"}
+      <div className="flex h-screen items-center justify-center bg-gray-950 text-red-400 flex-col gap-4">
+        <p className="text-lg font-medium">{error || "Lỗi khi tham gia cuộc họp"}</p>
+        <button
+          onClick={() => navigate("/")}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm"
+        >
+          Quay lại trang chủ
+        </button>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
+    <div className="h-screen w-screen bg-gray-950 text-white flex flex-col overflow-hidden">
+      {/* Top Header Bar */}
+      <div className="h-14 bg-gray-900 border-b border-gray-800 px-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <h1 className="font-semibold text-sm sm:text-base text-gray-100 truncate max-w-xs sm:max-w-md">
+            {meetingDetails?.title || `Phòng họp #${meetingId}`}
+          </h1>
+          <span className="hidden sm:inline-flex items-center gap-1 text-xs bg-gray-800 px-2.5 py-1 rounded-full text-gray-300">
+            <Users size={12} /> {participants.length + 1} người
+          </span>
+        </div>
 
-      {/* VIDEO GRID */}
-      <div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
-      >
-        <VideoTile
-          connectionId="local"
-          fullName={currentUser?.fullName}
-          stream={localStream}
-          isLocal={true}
-          isScreenSharing={isScreenSharing}
-          camEnabled={isVideoOn}
-          micEnabled={isMicOn}
-          onToggleCam={toggleCamera}
-          onToggleMic={toggleMicrophone}
-        />
+        {/* Quick Tab Buttons on Header for Mobile / Desktop */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => togglePanel("docs")}
+            className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
+              activePanel === "docs" ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-800"
+            }`}
+            title="Tài liệu cuộc họp"
+          >
+            <FileText size={16} />
+            <span className="hidden md:inline">Tài liệu</span>
+          </button>
 
-        {participants.map((p) => (
-          <VideoTile
-            key={p.connectionId}
-            connectionId={p.connectionId}
-            fullName={p.fullName}
-            stream={remoteStreams[p.connectionId]}
-            camEnabled={p.isVideoEnabled !== false}
-            micEnabled={p.isMicEnabled !== false}
-          />
-        ))}
+          <button
+            onClick={() => togglePanel("polls")}
+            className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
+              activePanel === "polls" ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-800"
+            }`}
+            title="Biểu quyết số"
+          >
+            <Vote size={16} />
+            <span className="hidden md:inline">Biểu quyết</span>
+          </button>
+
+          <button
+            onClick={() => togglePanel("notes")}
+            className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
+              activePanel === "notes" ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-800"
+            }`}
+            title="Ghi chú cá nhân"
+          >
+            <Edit3 size={16} />
+            <span className="hidden md:inline">Ghi chú</span>
+          </button>
+
+          <button
+            onClick={() => togglePanel("conclusion")}
+            className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
+              activePanel === "conclusion" ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-800"
+            }`}
+            title="Biên bản & Kết luận"
+          >
+            <FileCheck size={16} />
+            <span className="hidden md:inline">Kết luận</span>
+          </button>
+
+          <button
+            onClick={() => togglePanel("chat")}
+            className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors relative ${
+              activePanel === "chat" ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-800"
+            }`}
+            title="Trò chuyện"
+          >
+            <MessageSquare size={16} />
+            <span className="hidden md:inline">Chat</span>
+            {messages.length > 0 && activePanel !== "chat" && (
+              <span className="w-2 h-2 rounded-full bg-red-500 absolute top-1.5 right-1.5" />
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* CONTROL BAR */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex gap-4">
-        
+      {/* Main Workspace: Video Grid + Optional Side Panel */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* VIDEO GRID */}
+        <div className="flex-1 p-4 overflow-y-auto pb-24">
+          <div
+            className="grid gap-4 h-full"
+            style={{
+              gridTemplateColumns:
+                participants.length === 0
+                  ? "1fr"
+                  : participants.length === 1
+                  ? "repeat(auto-fit, minmax(320px, 1fr))"
+                  : "repeat(auto-fit, minmax(280px, 1fr))",
+            }}
+          >
+            <VideoTile
+              connectionId="local"
+              fullName={currentUser?.fullName || "Bạn"}
+              stream={localStream}
+              isLocal={true}
+              isScreenSharing={isScreenSharing}
+              camEnabled={isVideoOn}
+              micEnabled={isMicOn}
+              onToggleCam={toggleCamera}
+              onToggleMic={toggleMicrophone}
+            />
+
+            {participants.map((p) => (
+              <VideoTile
+                key={p.connectionId}
+                connectionId={p.connectionId}
+                fullName={p.fullName}
+                stream={remoteStreams[p.connectionId]}
+                camEnabled={p.isVideoEnabled !== false}
+                micEnabled={p.isMicEnabled !== false}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* SIDE PANEL */}
+        {activePanel && (
+          <div className="w-full sm:w-96 md:w-[420px] h-full shrink-0 flex flex-col z-20 shadow-2xl relative">
+            <button
+              onClick={() => setActivePanel(null)}
+              className="absolute top-3.5 right-3.5 p-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors z-30"
+              title="Đóng bảng"
+            >
+              <X size={18} />
+            </button>
+
+            {activePanel === "chat" && (
+              <MeetingChatPanel
+                messages={messages}
+                onSendMessage={sendMessage}
+                currentUserId={currentUser?.userId}
+              />
+            )}
+
+            {activePanel === "polls" && (
+              <MeetingPollsPanel
+                meetingId={meetingId}
+                connection={connection}
+                isHostOrAdmin={isHostOrAdmin}
+                currentUserId={currentUser?.userId}
+              />
+            )}
+
+            {activePanel === "notes" && (
+              <MeetingNotesPanel meetingId={meetingId} />
+            )}
+
+            {activePanel === "conclusion" && (
+              <MeetingConclusionPanel
+                meetingId={meetingId}
+                connection={connection}
+                isHostOrAdmin={isHostOrAdmin}
+                currentUserId={currentUser?.userId}
+                meetingTitle={meetingDetails?.title}
+              />
+            )}
+
+            {activePanel === "docs" && (
+              <MeetingDocsPanel meetingId={meetingId} />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* BOTTOM CONTROL BAR */}
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-md px-5 py-2.5 rounded-full border border-gray-700/80 shadow-2xl flex items-center gap-3 z-30">
         {/* MIC */}
         <button
           onClick={toggleMicrophone}
-          className={`p-3 rounded-full ${
-            isMicOn ? "bg-red-500 hover:bg-red-400" : "bg-gray-700 hover:bg-gray-600"
+          className={`p-3 rounded-full transition-all ${
+            isMicOn ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-red-600 hover:bg-red-500 text-white"
           }`}
-          title={isMicOn ? "Tắt micro" : "Bật micro"}
+          title={isMicOn ? "Tắt Micro" : "Bật Micro"}
         >
-          {isMicOn ? <Mic size={24} /> : <MicOff size={24} />}
+          {isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
         </button>
 
         {/* CAMERA */}
         <button
           onClick={toggleCamera}
-          className={`p-3 rounded-full ${
-            isVideoOn ? "bg-red-500 hover:bg-red-400" : "bg-gray-700 hover:bg-gray-600"
+          className={`p-3 rounded-full transition-all ${
+            isVideoOn ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-red-600 hover:bg-red-500 text-white"
           }`}
+          title={isVideoOn ? "Tắt Camera" : "Bật Camera"}
         >
-          {isVideoOn ? <Video size={24} /> : <VideoOff size={24} />}
+          {isVideoOn ? <Video size={20} /> : <VideoOff size={20} />}
         </button>
 
         {/* SHARE SCREEN */}
         <button
           onClick={isScreenSharing ? stopScreenShare : startScreenShare}
-          className={`p-4 rounded-full transition-all ${
+          className={`p-3 rounded-full transition-all ${
             isScreenSharing
-              ? "bg-blue-500 hover:bg-blue-600 text-white"
-              : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+              ? "bg-blue-600 hover:bg-blue-500 text-white ring-2 ring-blue-400/50"
+              : "bg-gray-800 hover:bg-gray-700 text-gray-200"
           }`}
-          title={isScreenSharing ? "Dừng chia sẻ" : "Chia sẻ màn hình"}
+          title={isScreenSharing ? "Dừng chia sẻ màn hình" : "Chia sẻ màn hình"}
         >
-          <Share2 size={24} />
+          <Share2 size={20} />
         </button>
+
+        <div className="w-px h-6 bg-gray-700 mx-1" />
 
         {/* LEAVE MEETING */}
         <button
-          className="p-4 rounded-full bg-red-600/20 hover:bg-red-600 
-                     text-red-500 hover:text-white border border-red-600/50 
-                     transition-all ml-4"
           onClick={handleLeaveMeeting}
+          className="px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-medium text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-red-600/30 transition-all"
           title="Rời cuộc họp"
         >
-          <PhoneOff size={24} />
+          <PhoneOff size={18} />
+          <span>Rời phòng</span>
         </button>
-
       </div>
 
-      
-
+      {/* Leave Feedback Toast */}
+      {showLeaveMessage && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 p-6 rounded-2xl text-center space-y-2">
+            <h3 className="text-base font-semibold text-white">Đang rời khỏi phiên họp...</h3>
+            <p className="text-xs text-gray-400">Cảm ơn bạn đã tham gia.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

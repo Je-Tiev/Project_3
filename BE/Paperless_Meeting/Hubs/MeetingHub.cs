@@ -5,6 +5,7 @@ using Paperless_Meeting.Repositories.Meeting;
 using Paperless_Meeting.Repositories.Participant;
 using System.Security.Claims;
 using System.Collections.Concurrent;
+using Paperless_Meeting.Repositories.Chat;
 using Paperless_Meeting.Services.Poll;
 
 namespace Paperless_Meeting.Hubs
@@ -15,6 +16,7 @@ namespace Paperless_Meeting.Hubs
         private readonly IMeetingService _meetingService;
         private readonly IParticipantService _participantService;
         private readonly IPollService _pollService;
+        private readonly IChatService _chatService;
         private readonly ILogger<MeetingHub> _logger;
         // <RoomName, <ConnectionId, UserId>>
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, int>> _roomConnections = new();
@@ -24,11 +26,13 @@ namespace Paperless_Meeting.Hubs
         public MeetingHub(IMeetingService meetingService,
                           IParticipantService participantService,
                           IPollService pollService,
+                          IChatService chatService,
                           ILogger<MeetingHub> logger)
         {
             _meetingService = meetingService;
             _participantService = participantService;
             _pollService = pollService;
+            _chatService = chatService;
             _logger = logger;
         }
 
@@ -128,6 +132,14 @@ namespace Paperless_Meeting.Hubs
                 {
                     await Clients.Caller.SendAsync("SyncCurrentPolls", activePolls);
                 }
+
+                // 8c. Đồng bộ lịch sử chat trong cuộc họp
+                var chatHistory = await _chatService.GetChatHistoryAsync(meetingId);
+                if (chatHistory != null && chatHistory.Any())
+                {
+                    await Clients.Caller.SendAsync("SyncChatHistory", chatHistory);
+                }
+
                 // 9. Gửi xác nhận đã tham gia phòng
                 await Clients.Caller.SendAsync("JoinedRoom", new
                 {
@@ -190,13 +202,16 @@ namespace Paperless_Meeting.Hubs
             if (!_roomConnections.TryGetValue(roomName, out var roomDict) || !roomDict.ContainsKey(Context.ConnectionId))
                 throw new HubException($"Phòng '{roomName}' không tồn tại.");
             
+            var saved = await _chatService.SaveMessageAsync(meetingId, int.Parse(userId), message);
+
             await Clients.Group(roomName).SendAsync("ReceiveMessage", new
             {
                 connectionId = Context.ConnectionId,
+                chatId = saved.ChatId,
                 userId,
-                userFullName,
-                message,
-                sentAt = DateTime.Now
+                userFullName = saved.UserFullName,
+                message = saved.Message,
+                sentAt = saved.SentAt
             });
 
             _logger.LogInformation("[HUB INFO] User {UserId} sent message to room {RoomName}: {Message}", userId, roomName, message);

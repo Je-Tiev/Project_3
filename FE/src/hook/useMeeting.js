@@ -685,6 +685,11 @@ export function useMeetingWithWebRTC(
       connection.on("ReceiveMessage", (msg) =>
         setMessages((prev) => [...prev, msg])
       );
+      connection.on("SyncChatHistory", (history) => {
+        if (Array.isArray(history)) {
+          setMessages(history);
+        }
+      });
     },
     [createPeerConnection, handleSignal]
   );
@@ -905,6 +910,7 @@ export function useMeetingWithWebRTC(
     toggleMicrophone,
     startScreenShare, // Trả về hàm này
     stopScreenShare, // Trả về hàm này
+    connection: connectionRef.current,
     sendMessage: (text) =>
       connectionRef.current?.invoke("SendMessage", Number(meetingId), text),
   };

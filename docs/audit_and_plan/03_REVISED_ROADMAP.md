@@ -130,20 +130,20 @@ flowchart TD
 
 #### Danh Sách Nhiệm Vụ Cụ Thể:
 ##### Backend:
-- [ ] **Task 2.1:** Hoàn thiện `PollService`: Bổ sung cơ chế Bỏ phiếu kín (Secret Ballot) - khi poll là kín, API kết quả chỉ trả về tổng số phiếu Yes/No/Abstain, tuyệt đối không trả về `userId` hay danh tính người bỏ phiếu.
-- [ ] **Task 2.2:** Xây dựng `NotesController` và `NoteService` (CRUD ghi chú cá nhân của từng đại biểu trong cuộc họp, tự động lưu nháp Auto-save, mã hóa nội dung ghi chú).
-- [ ] **Task 2.3:** Xây dựng `ConclusionsController` và `ConclusionService` (Chủ tọa/Thư ký soạn thảo kết luận cuộc họp, ký duyệt, ban hành biên bản và gửi thông báo tới các đại biểu).
-- [ ] **Task 2.4:** Xây dựng `MeetingLogService`: Tự động ghi nhật ký hệ thống (Audit Trail) khi đại biểu tham gia/rời phòng, tải tài liệu, bỏ phiếu biểu quyết.
-- [ ] **Task 2.5:** Bổ sung phương thức lưu trữ tin nhắn Text Chat vào database để phục vụ xem lại lịch sử sau cuộc họp.
+- [x] **Task 2.1:** Hoàn thiện `PollService`: Bổ sung cơ chế Bỏ phiếu kín (Secret Ballot) - khi poll là kín, API kết quả chỉ trả về tổng số phiếu Yes/No/Abstain, tuyệt đối không trả về `userId` hay danh tính người bỏ phiếu.
+- [x] **Task 2.2:** Xây dựng `NotesController` và `NoteService` (CRUD ghi chú cá nhân của từng đại biểu trong cuộc họp, tự động lưu nháp Auto-save, mã hóa nội dung ghi chú).
+- [x] **Task 2.3:** Xây dựng `ConclusionsController` và `ConclusionService` (Chủ tọa/Thư ký soạn thảo kết luận cuộc họp, ký duyệt, ban hành biên bản và gửi thông báo tới các đại biểu).
+- [x] **Task 2.4:** Xây dựng `MeetingLogService`: Tự động ghi nhật ký hệ thống (Audit Trail) khi đại biểu tham gia/rời phòng, tải tài liệu, bỏ phiếu biểu quyết.
+- [x] **Task 2.5:** Bổ sung phương thức lưu trữ tin nhắn Text Chat vào database để phục vụ xem lại lịch sử sau cuộc họp.
 
 ##### Frontend:
-- [ ] **Task 2.6:** Xây dựng giao diện Tab Biểu Quyết Số (Voting Tab) hoàn chỉnh trong phòng họp:
+- [x] **Task 2.6:** Xây dựng giao diện Tab Biểu Quyết Số (Voting Tab) hoàn chỉnh trong phòng họp:
   - Hiển thị danh sách biểu quyết đang diễn ra.
   - Cho phép đại biểu click bỏ phiếu (Đồng ý / Không đồng ý / Ý kiến khác).
   - Lắng nghe SignalR event `PollUpdated` / `VoteSubmitted` để cập nhật biểu đồ kết quả thời gian thực.
-- [ ] **Task 2.7:** Xây dựng giao diện Tab Ghi Chú Cá Nhân (Personal Notes Tab): Trình soạn thảo văn bản phong phú (Rich Text) tự động lưu sau mỗi 3 giây, cho phép xuất ghi chú ra file PDF/Word cá nhân.
-- [ ] **Task 2.8:** Xây dựng giao diện Tab Kết Luận & Biên Bản Cuộc Họp (Conclusions Tab) trong trang chi tiết cuộc họp.
-- [ ] **Task 2.9:** Bổ sung khung Text Chat hoàn chỉnh vào [MeetingDetailPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/MeetingDetailPage.jsx) (danh sách tin nhắn, ô nhập nội dung, hiển thị người gửi, timestamp).
+- [x] **Task 2.7:** Xây dựng giao diện Tab Ghi Chú Cá Nhân (Personal Notes Tab): Trình soạn thảo văn bản phong phú (Rich Text) tự động lưu sau mỗi 3 giây, cho phép xuất ghi chú ra file PDF/Word cá nhân.
+- [x] **Task 2.8:** Xây dựng giao diện Tab Kết Luận & Biên Bản Cuộc Họp (Conclusions Tab) trong trang chi tiết cuộc họp.
+- [x] **Task 2.9:** Bổ sung khung Text Chat hoàn chỉnh vào [MeetingDetailPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/MeetingDetailPage.jsx) (danh sách tin nhắn, ô nhập nội dung, hiển thị người gửi, timestamp).
 
 #### Tiêu Chí Nghiệm Thu (Acceptance Criteria - Phase 2):
 1. Chủ tọa tạo biểu quyết -> Toàn bộ đại biểu trong phòng họp nhận được thông báo pop-up realtime trên màn hình.

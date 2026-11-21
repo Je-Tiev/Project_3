@@ -25,6 +25,8 @@ public class Poll
     [Required]
     public PollStatus Status { get; set; }
 
+    public bool IsSecret { get; set; } = false;
+
     [Required]
     public DateTime CreatedAt { get; set; }
     

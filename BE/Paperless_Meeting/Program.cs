@@ -15,6 +15,10 @@ using Paperless_Meeting.Repositories.Meeting;
 using Paperless_Meeting.Repositories.Participant;
 using Paperless_Meeting.Repositories.Department;
 using Paperless_Meeting.Repositories.Room;
+using Paperless_Meeting.Repositories.Note;
+using Paperless_Meeting.Repositories.Conclusion;
+using Paperless_Meeting.Repositories.MeetingLog;
+using Paperless_Meeting.Repositories.Chat;
 using Paperless_Meeting.Services.Auth;
 using Paperless_Meeting.Services.Document;
 using Paperless_Meeting.Services.Meeting;
@@ -22,6 +26,10 @@ using Paperless_Meeting.Services.Participant;
 using Paperless_Meeting.Services.Poll;
 using Paperless_Meeting.Services.Department;
 using Paperless_Meeting.Services.Room;
+using Paperless_Meeting.Services.Note;
+using Paperless_Meeting.Services.Conclusion;
+using Paperless_Meeting.Services.MeetingLog;
+using Paperless_Meeting.Services.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 // --- Bật logging đầy đủ cho console ---
@@ -104,6 +112,10 @@ builder.Services.AddScoped<IParticipantService, ParticipantService>();
 builder.Services.AddScoped<IPollService, PollService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<IConclusionService, ConclusionService>();
+builder.Services.AddScoped<IMeetingLogService, MeetingLogService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)
