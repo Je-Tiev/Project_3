@@ -20,6 +20,8 @@ using Paperless_Meeting.Repositories.Conclusion;
 using Paperless_Meeting.Repositories.MeetingLog;
 using Paperless_Meeting.Repositories.Chat;
 using Paperless_Meeting.Repositories.Audio;
+using Paperless_Meeting.Repositories.Report;
+using Paperless_Meeting.Repositories.Ai;
 using Paperless_Meeting.Services.Auth;
 using Paperless_Meeting.Services.Document;
 using Paperless_Meeting.Services.Meeting;
@@ -32,6 +34,8 @@ using Paperless_Meeting.Services.Conclusion;
 using Paperless_Meeting.Services.MeetingLog;
 using Paperless_Meeting.Services.Chat;
 using Paperless_Meeting.Services.Audio;
+using Paperless_Meeting.Services.Report;
+using Paperless_Meeting.Services.Ai;
 
 var builder = WebApplication.CreateBuilder(args);
 // --- Bật logging đầy đủ cho console ---
@@ -128,6 +132,8 @@ builder.Services.AddScoped<IConclusionService, ConclusionService>();
 builder.Services.AddScoped<IMeetingLogService, MeetingLogService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IAudioService, AudioService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IAiSummaryService, AiSummaryService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)

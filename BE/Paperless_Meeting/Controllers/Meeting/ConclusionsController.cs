@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Paperless_Meeting.DTOs.Conclusion;
 using Paperless_Meeting.Hubs;
+using Paperless_Meeting.Repositories.Ai;
 using Paperless_Meeting.Repositories.Conclusion;
 using Paperless_Meeting.Repositories.Meeting;
 using Paperless_Meeting.Repositories.Participant;
@@ -18,17 +19,20 @@ public class ConclusionsController : ControllerBase
     private readonly IConclusionService _conclusionService;
     private readonly IMeetingService _meetingService;
     private readonly IParticipantService _participantService;
+    private readonly IAiSummaryService _aiSummaryService;
     private readonly IHubContext<MeetingHub> _hubContext;
 
     public ConclusionsController(
         IConclusionService conclusionService,
         IMeetingService meetingService,
         IParticipantService participantService,
+        IAiSummaryService aiSummaryService,
         IHubContext<MeetingHub> hubContext)
     {
         _conclusionService = conclusionService;
         _meetingService = meetingService;
         _participantService = participantService;
+        _aiSummaryService = aiSummaryService;
         _hubContext = hubContext;
     }
 
@@ -107,6 +111,35 @@ public class ConclusionsController : ControllerBase
         if (!string.IsNullOrEmpty(meeting.RoomId))
         {
             await _hubContext.Clients.Group(meeting.RoomId).SendAsync("ConclusionSigned", result);
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("meeting/{meetingId}/ai-generate")]
+    public async Task<IActionResult> GenerateAiSummary(int meetingId)
+    {
+        var userId = GetUserId();
+        var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
+        if (meeting == null) return NotFound("Không tìm thấy cuộc họp.");
+
+        var role = User.FindFirstValue(ClaimTypes.Role);
+        var isHostOrAdmin = meeting.CreatedByUserId == userId || role == "Admin" || role == "SuperAdmin";
+        if (!isHostOrAdmin)
+        {
+            return StatusCode(403, "Chỉ chủ trì hoặc quản trị viên mới có quyền kích hoạt tổng hợp AI.");
+        }
+
+        var aiText = await _aiSummaryService.GenerateMeetingSummaryAsync(meetingId);
+        var result = await _conclusionService.UpsertConclusionAsync(meetingId, userId, new ConclusionUpsertDto
+        {
+            Summary = aiText,
+            Status = "Draft"
+        });
+
+        if (!string.IsNullOrEmpty(meeting.RoomId))
+        {
+            await _hubContext.Clients.Group(meeting.RoomId).SendAsync("ConclusionUpdated", result);
         }
 
         return Ok(result);

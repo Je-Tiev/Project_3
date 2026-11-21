@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileCheck, PenTool, Printer, CheckCircle, Clock, ShieldCheck, Save } from 'lucide-react';
+import { FileCheck, PenTool, Printer, CheckCircle, Clock, ShieldCheck, Save, Sparkles } from 'lucide-react';
 import { apiCall } from '../../utils/api';
 
 export default function MeetingConclusionPanel({ meetingId, connection, isHostOrAdmin, currentUserId, meetingTitle }) {
@@ -9,6 +9,7 @@ export default function MeetingConclusionPanel({ meetingId, connection, isHostOr
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [generatingAi, setGeneratingAi] = useState(false);
 
   // Fetch conclusion
   const fetchConclusion = async () => {
@@ -84,6 +85,22 @@ export default function MeetingConclusionPanel({ meetingId, connection, isHostOr
       alert('Lỗi ký xác nhận: ' + (err.message || 'Lỗi hệ thống'));
     } finally {
       setSigning(false);
+    }
+  };
+
+  const handleGenerateAi = async () => {
+    if (!window.confirm("Bạn có muốn AI tự động tổng hợp toàn bộ diễn biến, biểu quyết và thảo luận phiên họp?")) return;
+    try {
+      setGeneratingAi(true);
+      const res = await apiCall(`/Conclusions/meeting/${meetingId}/ai-generate`, { method: 'POST' });
+      if (res) {
+        setConclusion(res);
+        setSummary(res.summary || '');
+      }
+    } catch (err) {
+      alert('Lỗi tạo tóm tắt AI: ' + (err.message || 'Lỗi hệ thống'));
+    } finally {
+      setGeneratingAi(false);
     }
   };
 
@@ -183,9 +200,20 @@ export default function MeetingConclusionPanel({ meetingId, connection, isHostOr
         {/* Content View / Edit */}
         {isHostOrAdmin ? (
           <form onSubmit={handleSaveConclusion} className="space-y-3">
-            <label className="block text-xs font-medium text-gray-300">
-              Nội dung kết luận cuộc họp (Chủ trì / Thư ký soạn thảo):
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-gray-300">
+                Nội dung kết luận cuộc họp (Chủ trì / Thư ký soạn thảo):
+              </label>
+              <button
+                type="button"
+                onClick={handleGenerateAi}
+                disabled={generatingAi}
+                className="flex items-center gap-1 text-[11px] bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-2.5 py-1 rounded-md transition-colors font-medium shadow-xs"
+              >
+                <Sparkles size={12} className={generatingAi ? "animate-spin" : ""} />
+                {generatingAi ? "AI đang tổng hợp..." : "AI Tự động tổng hợp"}
+              </button>
+            </div>
             <textarea
               rows={8}
               value={summary}

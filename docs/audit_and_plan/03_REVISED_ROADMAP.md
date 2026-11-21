@@ -188,14 +188,14 @@ flowchart TD
 **Mục tiêu:** Nâng cấp kho lưu trữ tệp tin lên chuẩn Object Storage (MinIO), triển khai đường ống AI trích xuất biên bản cuộc họp tự động (AI Summary & STT), và hoàn thiện báo cáo phân tích số liệu thật.
 
 #### Danh Sách Nhiệm Vụ Cụ Thể:
-- [ ] **Task 4.1:** Bổ sung container `minio` (S3 Compatible Storage) vào `docker-compose.yml`. Tái cấu trúc `DocumentService` sang cơ chế MinIO Presigned URL.
-- [ ] **Task 4.2:** Tích hợp Worker xử lý nền (Background Job với Hangfire / RabbitMQ): Tiếp nhận file ghi âm cuộc họp từ Phase 3.
-- [ ] **Task 4.3:** Xây dựng đường ống AI Audio Processing:
+- [x] **Task 4.1:** Bổ sung container `minio` (S3 Compatible Storage) vào `docker-compose.yml`. Tái cấu trúc `DocumentService` sang cơ chế MinIO Presigned URL.
+- [x] **Task 4.2:** Tích hợp Worker xử lý nền (Background Job với Hangfire / RabbitMQ): Tiếp nhận file ghi âm cuộc họp từ Phase 3.
+- [x] **Task 4.3:** Xây dựng đường ống AI Audio Processing:
   - Cắt nhỏ file âm thanh (Audio Chunker).
   - Gọi mô hình Speech-to-Text (OpenAI Whisper on-premise hoặc Gemini API) để sinh văn bản transcript có mốc thời gian.
   - Gọi Gemini 1.5 Flash / GPT-4o trích xuất: Bản tóm tắt điều hành (Executive Summary), Danh sách quyết định đã biểu quyết, và Bảng phân công hành động (Action Items).
-- [ ] **Task 4.4:** Tự động điền dữ liệu tóm tắt AI vào bảng `Conclusion` của cuộc họp để Chủ tọa rà soát và ký duyệt.
-- [ ] **Task 4.5:** Chuyển đổi toàn bộ biểu đồ báo cáo thống kê trong [ReportsPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/ReportsPage.jsx) từ Mock Data sang API phân tích dữ liệu thật từ cơ sở dữ liệu PostgreSQL.
+- [x] **Task 4.4:** Tự động điền dữ liệu tóm tắt AI vào bảng `Conclusion` của cuộc họp để Chủ tọa rà soát và ký duyệt.
+- [x] **Task 4.5:** Chuyển đổi toàn bộ biểu đồ báo cáo thống kê trong [ReportsPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/ReportsPage.jsx) từ Mock Data sang API phân tích dữ liệu thật từ cơ sở dữ liệu PostgreSQL.
 
 #### Tiêu Chí Nghiệm Thu (Acceptance Criteria - Phase 4):
 1. Tải lên tài liệu dung lượng 200MB -> Trình duyệt upload trực tiếp lên MinIO qua Presigned URL, Backend Kestrel không bị tăng dung lượng RAM.
