@@ -11,7 +11,14 @@
 // // - Handles reconnect lifecycle: re-join after automatic reconnect
 // // - Defensive logging and error handling
 
-// const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+// const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  {
+    urls: import.meta.env.VITE_TURN_URL || "turn:127.0.0.1:3478",
+    username: import.meta.env.VITE_TURN_USERNAME || "paperless",
+    credential: import.meta.env.VITE_TURN_PASSWORD || "meeting2026secret",
+  },
+];
 
 // export function useMeetingWithWebRTC(meetingId) {
 //   const connectionRef = useRef(null);
@@ -467,7 +474,14 @@ import {
   HttpTransportType,
 } from "@microsoft/signalr";
 
-const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  {
+    urls: import.meta.env.VITE_TURN_URL || "turn:127.0.0.1:3478",
+    username: import.meta.env.VITE_TURN_USERNAME || "paperless",
+    credential: import.meta.env.VITE_TURN_PASSWORD || "meeting2026secret",
+  },
+];
 
 export function useMeetingWithWebRTC(
   meetingId,
@@ -489,6 +503,7 @@ export function useMeetingWithWebRTC(
   const [isMicOn, setIsMicOn] = useState(defaultMicOn);
   const [isVideoOn, setIsVideoOn] = useState(defaultCamOn);
   const [isScreenSharing, setIsScreenSharing] = useState(false); // State share màn hình
+  const [isRoomLocked, setIsRoomLocked] = useState(false);
 
   // ---------- WebRTC helpers ----------
   const createPeerConnection = useCallback((connectionId, stream) => {
@@ -689,6 +704,23 @@ export function useMeetingWithWebRTC(
         if (Array.isArray(history)) {
           setMessages(history);
         }
+      });
+
+      connection.on("HostMutedYou", () => {
+        if (localStreamRef.current) {
+          const audioTrack = localStreamRef.current.getAudioTracks()[0];
+          if (audioTrack) audioTrack.enabled = false;
+        }
+        setIsMicOn(false);
+      });
+
+      connection.on("KickedFromMeeting", ({ reason }) => {
+        setError(reason || "Bạn đã bị Chủ tọa mời rời khỏi phiên họp.");
+        setStatus("kicked");
+      });
+
+      connection.on("RoomLockStatusChanged", ({ isLocked }) => {
+        setIsRoomLocked(isLocked);
       });
     },
     [createPeerConnection, handleSignal]
@@ -906,6 +938,7 @@ export function useMeetingWithWebRTC(
     isMicOn,
     isVideoOn,
     isScreenSharing, // Trả về state này
+    isRoomLocked,
     toggleCamera,
     toggleMicrophone,
     startScreenShare, // Trả về hàm này
@@ -913,5 +946,15 @@ export function useMeetingWithWebRTC(
     connection: connectionRef.current,
     sendMessage: (text) =>
       connectionRef.current?.invoke("SendMessage", Number(meetingId), text),
+    muteAll: () =>
+      connectionRef.current?.invoke("MuteAllParticipants", Number(meetingId)),
+    muteUser: (targetId) =>
+      connectionRef.current?.invoke("MuteUser", Number(meetingId), targetId),
+    kickParticipant: (targetId) =>
+      connectionRef.current?.invoke("KickParticipant", Number(meetingId), targetId),
+    lockRoom: (locked) =>
+      connectionRef.current?.invoke("LockMeetingRoom", Number(meetingId), locked),
+    broadcastSlide: (docId, page, zoom) =>
+      connectionRef.current?.invoke("BroadcastSlideChange", Number(meetingId), Number(docId), Number(page), Number(zoom)),
   };
 } // Dấu đóng function tổng nằm ở đây

@@ -19,6 +19,7 @@ using Paperless_Meeting.Repositories.Note;
 using Paperless_Meeting.Repositories.Conclusion;
 using Paperless_Meeting.Repositories.MeetingLog;
 using Paperless_Meeting.Repositories.Chat;
+using Paperless_Meeting.Repositories.Audio;
 using Paperless_Meeting.Services.Auth;
 using Paperless_Meeting.Services.Document;
 using Paperless_Meeting.Services.Meeting;
@@ -30,6 +31,7 @@ using Paperless_Meeting.Services.Note;
 using Paperless_Meeting.Services.Conclusion;
 using Paperless_Meeting.Services.MeetingLog;
 using Paperless_Meeting.Services.Chat;
+using Paperless_Meeting.Services.Audio;
 
 var builder = WebApplication.CreateBuilder(args);
 // --- Bật logging đầy đủ cho console ---
@@ -82,10 +84,19 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 524288000; // 500MB
 });
 
-builder.Services.AddSignalR(options =>
+var signalRBuilder = builder.Services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true; // Cho phép gửi chi tiết lỗi về React
-}); // Thêm SignalR
+});
+
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConnectionString))
+{
+    signalRBuilder.AddStackExchangeRedis(redisConnectionString, redisOptions =>
+    {
+        redisOptions.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("PaperlessMeetingSignalR");
+    });
+}
 
 // Cấu hình CORS
 builder.Services.AddCors(options =>
@@ -116,6 +127,7 @@ builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<IConclusionService, ConclusionService>();
 builder.Services.AddScoped<IMeetingLogService, MeetingLogService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IAudioService, AudioService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)

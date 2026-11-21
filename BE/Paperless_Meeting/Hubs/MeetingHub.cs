@@ -22,6 +22,8 @@ namespace Paperless_Meeting.Hubs
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, int>> _roomConnections = new();
         // <RoomName, ScreenShareConnectionId>
         private static readonly ConcurrentDictionary<string, string> _roomScreenShares = new();
+        // <RoomName, isLocked>
+        private static readonly ConcurrentDictionary<string, bool> _lockedRooms = new();
 
         public MeetingHub(IMeetingService meetingService,
                           IParticipantService participantService,
@@ -84,6 +86,16 @@ namespace Paperless_Meeting.Hubs
                     var participantIds = participants != null ? string.Join(", ", participants.Select(p => p.UserId)) : "null";
                     _logger.LogWarning("[DEBUG] Participants: {ParticipantIds}", participantIds);
                     throw new HubException("Bạn không có quyền tham gia cuộc họp này.");
+                }
+
+                // 4b. Kiểm tra xem phòng họp có đang bị khóa bởi Chủ tọa không
+                if (_lockedRooms.TryGetValue(meeting.RoomId, out bool isLocked) && isLocked)
+                {
+                    var userRole = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+                    if (meeting.CreatedByUserId != userId && userRole != "Admin" && userRole != "SuperAdmin")
+                    {
+                        throw new HubException("Phòng họp đã được Chủ tọa khóa lại.");
+                    }
                 }
                 // 5. Thêm người dùng vào group SignalR
                 var roomName = meeting.RoomId;
@@ -317,6 +329,105 @@ namespace Paperless_Meeting.Hubs
             }
 
             _logger.LogInformation("[HUB INFO] User {ConnectionId} stopped screen share in room {RoomName}", Context.ConnectionId, meeting.RoomId);
+        }
+
+        // ========== CHỦ TỌA ĐIỀU KHIỂN (HOST CONTROLS) ==========
+        public async Task MuteAllParticipants(int meetingId)
+        {
+            var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null) throw new HubException("Không tìm thấy cuộc họp.");
+
+            var userId = GetUserId();
+            var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+            if (meeting.CreatedByUserId != userId && role != "Admin" && role != "SuperAdmin")
+                throw new HubException("Chỉ chủ tọa mới có quyền tắt micro tất cả đại biểu.");
+
+            if (!string.IsNullOrEmpty(meeting.RoomId))
+            {
+                await Clients.OthersInGroup(meeting.RoomId).SendAsync("HostMutedYou");
+                _logger.LogInformation("[HOST CONTROL] Host {UserId} muted all in room {Room}", userId, meeting.RoomId);
+            }
+        }
+
+        public async Task MuteUser(int meetingId, string targetConnectionId)
+        {
+            var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null) throw new HubException("Không tìm thấy cuộc họp.");
+
+            var userId = GetUserId();
+            var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+            if (meeting.CreatedByUserId != userId && role != "Admin" && role != "SuperAdmin")
+                throw new HubException("Chỉ chủ tọa mới có quyền tắt micro đại biểu.");
+
+            await Clients.Client(targetConnectionId).SendAsync("HostMutedYou");
+            _logger.LogInformation("[HOST CONTROL] Host {UserId} muted client {Target}", userId, targetConnectionId);
+        }
+
+        public async Task KickParticipant(int meetingId, string targetConnectionId)
+        {
+            var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null) throw new HubException("Không tìm thấy cuộc họp.");
+
+            var userId = GetUserId();
+            var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+            if (meeting.CreatedByUserId != userId && role != "Admin" && role != "SuperAdmin")
+                throw new HubException("Chỉ chủ tọa mới có quyền mời đại biểu ra khỏi phòng.");
+
+            await Clients.Client(targetConnectionId).SendAsync("KickedFromMeeting", new
+            {
+                reason = "Chủ tọa đã mời bạn rời khỏi phiên họp."
+            });
+
+            if (!string.IsNullOrEmpty(meeting.RoomId))
+            {
+                await Groups.RemoveFromGroupAsync(targetConnectionId, meeting.RoomId);
+                if (_roomConnections.TryGetValue(meeting.RoomId, out var dict))
+                {
+                    dict.TryRemove(targetConnectionId, out _);
+                }
+                await Clients.Group(meeting.RoomId).SendAsync("UserLeft", new
+                {
+                    connectionId = targetConnectionId,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+        }
+
+        public async Task LockMeetingRoom(int meetingId, bool isLocked)
+        {
+            var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null) throw new HubException("Không tìm thấy cuộc họp.");
+
+            var userId = GetUserId();
+            var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value;
+            if (meeting.CreatedByUserId != userId && role != "Admin" && role != "SuperAdmin")
+                throw new HubException("Chỉ chủ tọa mới có quyền khóa phòng họp.");
+
+            _lockedRooms.AddOrUpdate(meeting.RoomId, isLocked, (_, _) => isLocked);
+
+            if (!string.IsNullOrEmpty(meeting.RoomId))
+            {
+                await Clients.Group(meeting.RoomId).SendAsync("RoomLockStatusChanged", new { isLocked });
+                _logger.LogInformation("[HOST CONTROL] Room {Room} lock status: {Locked}", meeting.RoomId, isLocked);
+            }
+        }
+
+        // ========== ĐỒNG BỘ SLIDE TRÌNH CHIẾU (SLIDE SYNC) ==========
+        public async Task BroadcastSlideChange(int meetingId, int documentId, int pageNumber, double zoomLevel)
+        {
+            var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
+            if (meeting == null) throw new HubException("Không tìm thấy cuộc họp.");
+
+            if (!string.IsNullOrEmpty(meeting.RoomId))
+            {
+                await Clients.OthersInGroup(meeting.RoomId).SendAsync("SlidePageChanged", new
+                {
+                    documentId,
+                    pageNumber,
+                    zoomLevel,
+                    presenterId = GetUserId()
+                });
+            }
         }
 
         // Xử lý khi ngắt kết nối

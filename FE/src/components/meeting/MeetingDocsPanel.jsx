@@ -3,7 +3,12 @@ import { FileText, Eye, Download, File, Lock, Shield } from 'lucide-react';
 import { apiCall } from '../../utils/api';
 import InAppDocumentViewer from '../InAppDocumentViewer';
 
-export default function MeetingDocsPanel({ meetingId }) {
+export default function MeetingDocsPanel({
+  meetingId,
+  isPresenter = false,
+  onBroadcastSlideChange = null,
+  syncedSlideInfo = null,
+}) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [viewingDoc, setViewingDoc] = useState(null);
@@ -149,6 +154,9 @@ export default function MeetingDocsPanel({ meetingId }) {
         <InAppDocumentViewer
           documentId={viewingDoc.id}
           fileName={viewingDoc.name}
+          isPresenter={isPresenter}
+          onBroadcastSlideChange={onBroadcastSlideChange}
+          syncedPage={syncedSlideInfo?.documentId === viewingDoc.id ? syncedSlideInfo.pageNumber : null}
           onClose={() => setViewingDoc(null)}
         />
       )}

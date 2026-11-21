@@ -17,6 +17,11 @@ import {
   FileText,
   X,
   Users,
+  Lock,
+  Unlock,
+  VolumeX,
+  UserX,
+  Disc,
 } from "lucide-react";
 import { apiCall } from "../utils/api";
 import MeetingChatPanel from "../components/meeting/MeetingChatPanel";
@@ -24,17 +29,20 @@ import MeetingPollsPanel from "../components/meeting/MeetingPollsPanel";
 import MeetingNotesPanel from "../components/meeting/MeetingNotesPanel";
 import MeetingConclusionPanel from "../components/meeting/MeetingConclusionPanel";
 import MeetingDocsPanel from "../components/meeting/MeetingDocsPanel";
+import MeetingAudioRecorder from "../components/meeting/MeetingAudioRecorder";
 
 export default function MeetingDetailPage() {
   const { meetingId } = useParams();
   const { currentUser, meetings } = useApp();
   const navigate = useNavigate();
 
-  const [activePanel, setActivePanel] = useState(null); // 'chat' | 'polls' | 'notes' | 'conclusion' | 'docs' | null
+  const [activePanel, setActivePanel] = useState(null); // 'chat' | 'polls' | 'notes' | 'conclusion' | 'docs' | 'recorder' | null
   const [meetingDetails, setMeetingDetails] = useState(null);
   const [showLeaveMessage, setShowLeaveMessage] = useState(false);
+  const [syncedSlideInfo, setSyncedSlideInfo] = useState(null);
+  const [hostNotification, setHostNotification] = useState("");
 
-  // Load meeting metadata to know host & title
+  // Load meeting metadata
   useEffect(() => {
     let isMounted = true;
     const loadMeeting = async () => {
@@ -77,7 +85,28 @@ export default function MeetingDetailPage() {
     isMicOn,
     isVideoOn,
     isScreenSharing,
+    isRoomLocked,
+    muteAll,
+    muteUser,
+    kickParticipant,
+    lockRoom,
+    broadcastSlide,
   } = useMeetingWithWebRTC(meetingId);
+
+  // Hook into Slide Sync event
+  useEffect(() => {
+    if (!connection) return;
+
+    const handleSlideChanged = (data) => {
+      setSyncedSlideInfo(data);
+    };
+
+    connection.on("SlidePageChanged", handleSlideChanged);
+
+    return () => {
+      connection.off("SlidePageChanged", handleSlideChanged);
+    };
+  }, [connection]);
 
   const handleLeaveMeeting = () => {
     setShowLeaveMessage(true);
@@ -96,6 +125,40 @@ export default function MeetingDetailPage() {
     setActivePanel((prev) => (prev === panelName ? null : panelName));
   };
 
+  const handleMuteAll = async () => {
+    if (!window.confirm("Bạn có muốn tắt micro của tất cả đại biểu tham gia?")) return;
+    try {
+      await muteAll();
+      showToast("Đã gửi lệnh tắt micro tới tất cả đại biểu.");
+    } catch (e) {
+      alert("Lỗi: " + e.message);
+    }
+  };
+
+  const handleToggleLock = async () => {
+    try {
+      await lockRoom(!isRoomLocked);
+      showToast(isRoomLocked ? "Đã mở khóa phòng họp." : "Đã khóa phòng họp thành công.");
+    } catch (e) {
+      alert("Lỗi: " + e.message);
+    }
+  };
+
+  const handleKick = async (targetConnId, name) => {
+    if (!window.confirm(`Bạn có chắc muốn mời ${name || "đại biểu"} ra khỏi phòng họp?`)) return;
+    try {
+      await kickParticipant(targetConnId);
+      showToast(`Đã mời ${name || "đại biểu"} rời khỏi phòng.`);
+    } catch (e) {
+      alert("Lỗi: " + e.message);
+    }
+  };
+
+  const showToast = (msg) => {
+    setHostNotification(msg);
+    setTimeout(() => setHostNotification(""), 3500);
+  };
+
   if (status === "connecting" || status === "reconnecting")
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-white flex-col gap-3">
@@ -104,7 +167,7 @@ export default function MeetingDetailPage() {
       </div>
     );
 
-  if (status === "error" || error)
+  if (status === "error" || error || status === "kicked")
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-red-400 flex-col gap-4">
         <p className="text-lg font-medium">{error || "Lỗi khi tham gia cuộc họp"}</p>
@@ -129,16 +192,56 @@ export default function MeetingDetailPage() {
           <span className="hidden sm:inline-flex items-center gap-1 text-xs bg-gray-800 px-2.5 py-1 rounded-full text-gray-300">
             <Users size={12} /> {participants.length + 1} người
           </span>
+          {isRoomLocked && (
+            <span className="flex items-center gap-1 text-[11px] bg-red-950/80 border border-red-800 text-red-300 px-2 py-0.5 rounded-full">
+              <Lock size={10} /> Đã khóa phòng
+            </span>
+          )}
         </div>
 
-        {/* Quick Tab Buttons on Header for Mobile / Desktop */}
+        {/* Quick Tab Buttons on Header */}
         <div className="flex items-center gap-1">
+          {/* Host Controls */}
+          {isHostOrAdmin && (
+            <div className="flex items-center gap-1 mr-2 border-r border-gray-700 pr-2">
+              <button
+                onClick={handleMuteAll}
+                className="p-2 rounded-lg text-xs flex items-center gap-1 text-yellow-400 hover:bg-yellow-950/40 transition-colors"
+                title="Tắt micro tất cả đại biểu"
+              >
+                <VolumeX size={16} />
+                <span className="hidden lg:inline">Tắt mic tất cả</span>
+              </button>
+              <button
+                onClick={handleToggleLock}
+                className={`p-2 rounded-lg text-xs flex items-center gap-1 transition-colors ${
+                  isRoomLocked ? "text-red-400 bg-red-950/50" : "text-gray-300 hover:bg-gray-800"
+                }`}
+                title={isRoomLocked ? "Mở khóa phòng" : "Khóa phòng họp"}
+              >
+                {isRoomLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                <span className="hidden lg:inline">{isRoomLocked ? "Mở khóa" : "Khóa phòng"}</span>
+              </button>
+            </div>
+          )}
+
+          <button
+            onClick={() => togglePanel("recorder")}
+            className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
+              activePanel === "recorder" ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-800"
+            }`}
+            title="Ghi âm phiên họp"
+          >
+            <Disc size={16} />
+            <span className="hidden md:inline">Ghi âm</span>
+          </button>
+
           <button
             onClick={() => togglePanel("docs")}
             className={`p-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
               activePanel === "docs" ? "bg-red-600 text-white" : "text-gray-300 hover:bg-gray-800"
             }`}
-            title="Tài liệu cuộc họp"
+            title="Tài liệu cuộc họp & Đồng bộ Slide"
           >
             <FileText size={16} />
             <span className="hidden md:inline">Tài liệu</span>
@@ -193,6 +296,13 @@ export default function MeetingDetailPage() {
         </div>
       </div>
 
+      {/* Host Toast Notification */}
+      {hostNotification && (
+        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full text-xs shadow-xl z-50 flex items-center gap-2">
+          <span>{hostNotification}</span>
+        </div>
+      )}
+
       {/* Main Workspace: Video Grid + Optional Side Panel */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* VIDEO GRID */}
@@ -221,14 +331,34 @@ export default function MeetingDetailPage() {
             />
 
             {participants.map((p) => (
-              <VideoTile
-                key={p.connectionId}
-                connectionId={p.connectionId}
-                fullName={p.fullName}
-                stream={remoteStreams[p.connectionId]}
-                camEnabled={p.isVideoEnabled !== false}
-                micEnabled={p.isMicEnabled !== false}
-              />
+              <div key={p.connectionId} className="relative group">
+                <VideoTile
+                  connectionId={p.connectionId}
+                  fullName={p.fullName}
+                  stream={remoteStreams[p.connectionId]}
+                  camEnabled={p.isVideoEnabled !== false}
+                  micEnabled={p.isMicEnabled !== false}
+                />
+                {/* Host Quick Actions on Tile */}
+                {isHostOrAdmin && (
+                  <div className="absolute top-2 right-2 hidden group-hover:flex items-center gap-1 bg-black/60 backdrop-blur-xs p-1 rounded-lg z-10">
+                    <button
+                      onClick={() => muteUser(p.connectionId)}
+                      className="p-1 text-gray-300 hover:text-yellow-400 hover:bg-gray-800 rounded"
+                      title="Tắt micro đại biểu này"
+                    >
+                      <MicOff size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleKick(p.connectionId, p.fullName)}
+                      className="p-1 text-gray-300 hover:text-red-400 hover:bg-gray-800 rounded"
+                      title="Mời ra khỏi phòng"
+                    >
+                      <UserX size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -243,6 +373,18 @@ export default function MeetingDetailPage() {
             >
               <X size={18} />
             </button>
+
+            {activePanel === "recorder" && (
+              <div className="flex flex-col h-full bg-gray-800 text-white border-l border-gray-700 p-4 space-y-4">
+                <h3 className="font-semibold text-base flex items-center gap-2">
+                  <Disc className="text-red-500" /> Bản ghi âm cuộc họp
+                </h3>
+                <MeetingAudioRecorder
+                  meetingId={meetingId}
+                  onRecordingSaved={() => showToast("Đã lưu bản ghi âm thành công!")}
+                />
+              </div>
+            )}
 
             {activePanel === "chat" && (
               <MeetingChatPanel
@@ -261,9 +403,7 @@ export default function MeetingDetailPage() {
               />
             )}
 
-            {activePanel === "notes" && (
-              <MeetingNotesPanel meetingId={meetingId} />
-            )}
+            {activePanel === "notes" && <MeetingNotesPanel meetingId={meetingId} />}
 
             {activePanel === "conclusion" && (
               <MeetingConclusionPanel
@@ -276,7 +416,14 @@ export default function MeetingDetailPage() {
             )}
 
             {activePanel === "docs" && (
-              <MeetingDocsPanel meetingId={meetingId} />
+              <MeetingDocsPanel
+                meetingId={meetingId}
+                isPresenter={isHostOrAdmin}
+                onBroadcastSlideChange={({ documentId, pageNumber, zoomLevel }) =>
+                  broadcastSlide(documentId, pageNumber, zoomLevel)
+                }
+                syncedSlideInfo={syncedSlideInfo}
+              />
             )}
           </div>
         )}

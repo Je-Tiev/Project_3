@@ -14,6 +14,37 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  coturn:
+    image: coturn/coturn:latest
+    restart: unless-stopped
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49152-49160:49152-49160/udp"
+    command:
+      - turnserver
+      - --log-file=stdout
+      - --listening-port=3478
+      - --min-port=49152
+      - --max-port=49160
+      - --user=paperless:meeting2026secret
+      - --realm=paperless.meeting
+      - --lt-cred-mech
+      - --fingerprint
+
   backend:
     build:
       context: ./BE/Paperless_Meeting
@@ -25,14 +56,20 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:-paperless_meeting};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres};SSL Mode=Prefer
+      - ConnectionStrings__Redis=redis:6379
       - Jwt__Key=${JWT_SECRET_KEY:-DEV_JWT_SECRET_KEY_CHANGE_IN_PRODUCTION_ENV_MIN_32_BYTES_LONG}
       - Jwt__Issuer=${JWT_ISSUER:-PaperlessMeetingBackend}
       - Jwt__Audience=${JWT_AUDIENCE:-PaperlessMeetingFrontend}
       - Storage__UploadPath=/app/Uploads
+      - Webrtc__TurnServer=turn:127.0.0.1:3478
+      - Webrtc__TurnUsername=paperless
+      - Webrtc__TurnPassword=meeting2026secret
     volumes:
       - backend_uploads:/app/Uploads
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   frontend:
@@ -47,4 +84,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   backend_uploads:

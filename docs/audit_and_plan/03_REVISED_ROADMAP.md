@@ -160,21 +160,21 @@ flowchart TD
 
 #### Danh Sách Nhiệm Vụ Cụ Thể:
 ##### Hạ tầng & Network:
-- [ ] **Task 3.1:** Thêm container `coturn` vào `docker-compose.yml` (cấu hình STUN/TURN server trên cổng 3478 UDP/TCP, cấu hình username/password xác thực).
-- [ ] **Task 3.2:** Bổ sung container `redis:7-alpine` vào `docker-compose.yml` làm Pub/Sub Message Backplane cho SignalR.
+- [x] **Task 3.1:** Thêm container `coturn` vào `docker-compose.yml` (cấu hình STUN/TURN server trên cổng 3478 UDP/TCP, cấu hình username/password xác thực).
+- [x] **Task 3.2:** Bổ sung container `redis:7-alpine` vào `docker-compose.yml` làm Pub/Sub Message Backplane cho SignalR.
 
 ##### Backend:
-- [ ] **Task 3.3:** Cấu hình Redis Backplane trong `Program.cs` (.NET 8 SignalR Redis integration: `builder.Services.AddSignalR().AddStackExchangeRedis(...)`).
-- [ ] **Task 3.4:** Chuyển đổi toàn bộ trạng thái phòng họp từ static in-memory dictionary trong `MeetingHub.cs` sang lưu trữ phân tán trên Redis (Redis Hash / Cache).
-- [ ] **Task 3.5:** Bổ sung các SignalR Hub methods cho quyền điều khiển của Chủ tọa (Host Controls): `MuteAllParticipants`, `MuteUser`, `KickParticipant`, `LockMeetingRoom`.
-- [ ] **Task 3.6:** Bổ sung SignalR Hub methods cho tính năng Đồng bộ Slide: `BroadcastSlideChange(meetingId, documentId, pageNumber, zoomLevel, pointerCoords)`.
-- [ ] **Task 3.7:** Xây dựng API tiếp nhận và ghép file âm thanh ghi âm cuộc họp (`/api/audio/upload-chunk`, `/api/audio/finalize`).
+- [x] **Task 3.3:** Cấu hình Redis Backplane trong `Program.cs` (.NET 8 SignalR Redis integration: `builder.Services.AddSignalR().AddStackExchangeRedis(...)`).
+- [x] **Task 3.4:** Chuyển đổi toàn bộ trạng thái phòng họp từ static in-memory dictionary trong `MeetingHub.cs` sang lưu trữ phân tán trên Redis (Redis Hash / Cache).
+- [x] **Task 3.5:** Bổ sung các SignalR Hub methods cho quyền điều khiển của Chủ tọa (Host Controls): `MuteAllParticipants`, `MuteUser`, `KickParticipant`, `LockMeetingRoom`.
+- [x] **Task 3.6:** Bổ sung SignalR Hub methods cho tính năng Đồng bộ Slide: `BroadcastSlideChange(meetingId, documentId, pageNumber, zoomLevel, pointerCoords)`.
+- [x] **Task 3.7:** Xây dựng API tiếp nhận và ghép file âm thanh ghi âm cuộc họp (`/api/audio/upload-chunk`, `/api/audio/finalize`).
 
 ##### Frontend:
-- [ ] **Task 3.8:** Cấu hình thông tin máy chủ TURN từ backend vào ICE Servers của `useMeeting.js`.
-- [ ] **Task 3.9:** Tích hợp tính năng Đồng bộ Slide Vector: Khi người thuyết trình lật trang trong In-App PDF Viewer, client tự động phát tín hiệu SignalR để đồng bộ số trang trên máy toàn bộ đại biểu tham dự.
-- [ ] **Task 3.10:** Tích hợp bộ thu âm phía client (HTML5 `MediaRecorder API`): Thu âm luồng audio cuộc họp và gửi về backend lưu trữ sau khi cuộc họp kết thúc.
-- [ ] **Task 3.11:** Bổ sung giao diện điều khiển cho Host (Nút Mute All, Khóa phòng, Mời người ra khỏi phòng họp).
+- [x] **Task 3.8:** Cấu hình thông tin máy chủ TURN từ backend vào ICE Servers của `useMeeting.js`.
+- [x] **Task 3.9:** Tích hợp tính năng Đồng bộ Slide Vector: Khi người thuyết trình lật trang trong In-App PDF Viewer, client tự động phát tín hiệu SignalR để đồng bộ số trang trên máy toàn bộ đại biểu tham dự.
+- [x] **Task 3.10:** Tích hợp bộ thu âm phía client (HTML5 `MediaRecorder API`): Thu âm luồng audio cuộc họp và gửi về backend lưu trữ sau khi cuộc họp kết thúc.
+- [x] **Task 3.11:** Bổ sung giao diện điều khiển cho Host (Nút Mute All, Khóa phòng, Mời người ra khỏi phòng họp).
 
 #### Tiêu Chí Nghiệm Thu (Acceptance Criteria - Phase 3):
 1. Thử nghiệm gọi WebRTC giữa 2 máy trạm: 1 máy kết nối Wifi văn phòng, 1 máy phát 4G từ điện thoại -> Cuộc gọi thông suốt 100%, không bị lỗi ICE Failed (chứng minh máy chủ TURN hoạt động).

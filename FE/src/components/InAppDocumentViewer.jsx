@@ -1,12 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, Maximize2, Minimize2, Loader2, AlertCircle, FileText } from 'lucide-react';
+import { X, Download, Maximize2, Minimize2, Loader2, AlertCircle, FileText, ChevronLeft, ChevronRight, Radio } from 'lucide-react';
 import api from '../utils/api';
 
-const InAppDocumentViewer = ({ documentId, fileName, onClose }) => {
+const InAppDocumentViewer = ({
+  documentId,
+  fileName,
+  onClose,
+  isPresenter = false,
+  onBroadcastSlideChange = null,
+  syncedPage = null,
+}) => {
   const [blobUrl, setBlobUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // When syncedPage arrives from SignalR and attendee is watching
+  useEffect(() => {
+    if (syncedPage && !isPresenter) {
+      setCurrentPage(syncedPage);
+    }
+  }, [syncedPage, isPresenter]);
 
   useEffect(() => {
     let active = true;
@@ -16,11 +31,11 @@ const InAppDocumentViewer = ({ documentId, fileName, onClose }) => {
       try {
         const token = localStorage.getItem('token');
         const baseUrl = import.meta.env.VITE_API_URL || '/api';
-        
+
         const response = await fetch(`${baseUrl}/Document/${documentId}/view`, {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!response.ok) {
@@ -69,13 +84,27 @@ const InAppDocumentViewer = ({ documentId, fileName, onClose }) => {
     document.body.removeChild(link);
   };
 
+  const changePage = (newPage) => {
+    const p = Math.max(1, newPage);
+    setCurrentPage(p);
+    if (isPresenter && onBroadcastSlideChange) {
+      onBroadcastSlideChange({
+        documentId: Number(documentId),
+        pageNumber: p,
+        zoomLevel: 1.0,
+      });
+    }
+  };
+
   const isPdf = fileName?.toLowerCase().endsWith('.pdf');
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
-      <div className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-200 border border-gray-200 ${
-        isFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-5xl h-[88vh]'
-      }`}>
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
+      <div
+        className={`bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-200 border border-gray-200 ${
+          isFullscreen ? 'w-full h-full rounded-none' : 'w-full max-w-5xl h-[88vh]'
+        }`}
+      >
         {/* Header Bar */}
         <div className="flex justify-between items-center px-6 py-3.5 bg-gray-900 text-white border-b border-gray-800">
           <div className="flex items-center gap-3 overflow-hidden">
@@ -86,9 +115,40 @@ const InAppDocumentViewer = ({ documentId, fileName, onClose }) => {
             <span className="text-xs bg-gray-800 px-2 py-0.5 rounded text-gray-400 font-mono">
               In-App Viewer
             </span>
+            {isPresenter ? (
+              <span className="hidden sm:flex items-center gap-1 text-[11px] bg-red-900/80 text-red-300 px-2 py-0.5 rounded-full font-medium">
+                <Radio size={12} className="animate-pulse" /> Đang phát sóng slide
+              </span>
+            ) : syncedPage ? (
+              <span className="hidden sm:flex items-center gap-1 text-[11px] bg-blue-900/80 text-blue-300 px-2 py-0.5 rounded-full font-medium">
+                Đồng bộ trang {syncedPage}
+              </span>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Slide Navigation for Presenter */}
+            {isPdf && (
+              <div className="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded-lg text-xs mr-2">
+                <button
+                  onClick={() => changePage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="p-1 hover:bg-gray-700 disabled:opacity-30 rounded text-gray-300"
+                  title="Trang trước"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="px-1.5 font-mono text-gray-200">Trang {currentPage}</span>
+                <button
+                  onClick={() => changePage(currentPage + 1)}
+                  className="p-1 hover:bg-gray-700 rounded text-gray-300"
+                  title="Trang sau"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+
             <button
               onClick={handleDownload}
               className="p-1.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors text-xs flex items-center gap-1.5 px-3"
@@ -142,7 +202,8 @@ const InAppDocumentViewer = ({ documentId, fileName, onClose }) => {
           {!loading && !error && blobUrl && (
             isPdf ? (
               <iframe
-                src={`${blobUrl}#toolbar=1&navpanes=1`}
+                key={`page-${currentPage}`}
+                src={`${blobUrl}#page=${currentPage}&toolbar=1&navpanes=1`}
                 className="w-full h-full border-0"
                 title={fileName}
               />

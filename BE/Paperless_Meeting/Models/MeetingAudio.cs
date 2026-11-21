@@ -19,11 +19,11 @@ public class MeetingAudio
     public virtual User Speaker { get; set; }
 
     [Required]
-    [StringLength(500)]
-    public string AudioPath { get; set; }
+    [StringLength(255)]
+    public string FilePath { get; set; }
 
     [Required]
-    public DateTime Timestamp { get; set; }
+    public DateTime CreatedAt { get; set; }
 
     [Range(0, double.MaxValue)]
     public float Duration { get; set; }
