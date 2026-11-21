@@ -693,8 +693,9 @@ export function useMeetingWithWebRTC(
   useEffect(() => {
     if (!meetingId) return;
 
+    const hubUrl = import.meta.env.VITE_HUB_URL || "/meetinghub";
     const connection = new HubConnectionBuilder()
-      .withUrl("http://localhost:5075/meetinghub", {
+      .withUrl(hubUrl, {
         accessTokenFactory: () => localStorage.getItem("token"),
         transport: HttpTransportType.WebSockets,
       })
@@ -715,6 +716,17 @@ export function useMeetingWithWebRTC(
     return () => {
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((t) => t.stop());
+        localStreamRef.current = null;
+      }
+      if (peersRef.current) {
+        peersRef.current.forEach(({ pc }) => {
+          try {
+            pc?.close();
+          } catch (e) {
+            console.warn("Lỗi khi đóng peer connection:", e);
+          }
+        });
+        peersRef.current.clear();
       }
       connection.stop();
     };

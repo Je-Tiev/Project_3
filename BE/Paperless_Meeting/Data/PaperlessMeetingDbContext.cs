@@ -90,11 +90,20 @@ public class PaperlessMeetingDbContext : DbContext
             .HasForeignKey(uv => uv.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Chống Double Voting: Ràng buộc duy nhất cho một cặp (PollId, UserId)
+        modelBuilder.Entity<UserVote>()
+            .HasIndex(uv => new { uv.PollId, uv.UserId })
+            .IsUnique();
+
         modelBuilder.Entity<RefreshToken>()
             .HasOne(rt => rt.User)
             .WithMany()
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Tối ưu hóa tra cứu Refresh Token
+        modelBuilder.Entity<RefreshToken>()
+            .HasIndex(rt => rt.Token);
 
         modelBuilder.Entity<User>()
             .HasOne(u => u.Department)

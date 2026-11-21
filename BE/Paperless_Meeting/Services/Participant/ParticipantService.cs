@@ -183,4 +183,10 @@ public class ParticipantService : IParticipantService
                             && mp.UserId == userId 
                             && mp.RoleInMeeting == MeetingParticipant.MeetingRole.Host);
     }
+
+    public async Task<bool> IsParticipantAsync(int meetingId, int userId)
+    {
+        return await _context.MeetingParticipants
+            .AnyAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
+    }
 }

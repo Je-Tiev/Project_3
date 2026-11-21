@@ -34,7 +34,7 @@ export default function MeetingPreJoinPage() {
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5075/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
   const videoRef = useRef(null);
   const localStreamRef = useRef(null);  // ← USE REF instead of state!

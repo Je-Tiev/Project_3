@@ -108,7 +108,7 @@ namespace Paperless_Meeting.Controllers.Poll
 
             var success = await _pollService.SubmitVoteAsync(pollId, userId, requestDto.Choice);
             
-            if (!success) return StatusCode(500, "Có lỗi xảy ra khi lưu phiếu bầu.");
+            if (!success) return Conflict(new { message = "Bạn đã thực hiện bình chọn cho câu hỏi này rồi hoặc bình chọn đã đóng." });
 
             var updatedPollStats = await _pollService.GetPollByIdAsync(pollId, userId);
             if (!string.IsNullOrEmpty(meeting.RoomId))

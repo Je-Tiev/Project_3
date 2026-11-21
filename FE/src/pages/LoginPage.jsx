@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Video, User, Lock, XCircle } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { formatTime } from '../utils/dateUtils';
+import LiveClock from '../components/LiveClock';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
@@ -9,7 +9,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, currentTime } = useApp();
+  const { login } = useApp();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -42,7 +42,7 @@ const LoginPage = () => {
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Phòng Họp Không Giấy</h1>
           <p className="text-gray-500">Ủy Ban Nhân Dân Tỉnh</p>
-          <p className="text-sm text-gray-400 mt-2">{formatTime(currentTime)}</p>
+          <LiveClock className="text-sm text-gray-400 mt-2 block" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

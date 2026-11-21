@@ -29,6 +29,7 @@ namespace Paperless_Meeting.Controllers.Auth
             return Ok("Đăng ký thành công.");
         }
 
+        [Authorize(Roles = "SuperAdmin")]
         [HttpPost("register/admin")]
         public async Task<IActionResult> RegisterAdmin(RegisterRequestDto registerDto)
         {

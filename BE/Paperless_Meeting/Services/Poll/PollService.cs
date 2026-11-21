@@ -87,10 +87,17 @@ namespace Paperless_Meeting.Services.Poll
                 VotedAt = DateTime.UtcNow
             };
 
-            _context.UserVotes.Add(userVote);
-            await _context.SaveChangesAsync();
-
-            return true;
+            try
+            {
+                _context.UserVotes.Add(userVote);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateException)
+            {
+                // Bắt xung đột khóa duy nhất (PollId, UserId) do Double Voting race condition
+                return false;
+            }
         }
 
         public async Task<bool> HasUserVotedAsync(int pollId, int userId)

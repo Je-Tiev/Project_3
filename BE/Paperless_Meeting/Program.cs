@@ -99,6 +99,12 @@ builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IParticipantService, ParticipantService>();
 builder.Services.AddScoped<IPollService, PollService>();
 
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)
+{
+    throw new InvalidOperationException("Jwt:Key is not configured or is too short. Minimum length is 32 bytes (256 bits).");
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -110,8 +116,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
 
         options.Events = new JwtBearerEvents
@@ -136,9 +141,11 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PaperlessMeetingDbContext>();
-    // Nếu muốn dùng migrations thực sự, thay EnsureCreated bằng Migrate() và
-    // đảm bảo migrations được tạo bằng `dotnet ef migrations add`.
-    db.Database.EnsureCreated();
+    // Tự động áp dụng EF Core Migrations khi khởi động ứng dụng
+    if (db.Database.IsRelational())
+    {
+        db.Database.Migrate();
+    }
     // Seed initial users for development if none exist
     if (!db.Users.Any())
     {
@@ -175,18 +182,13 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-var uploadPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
+// Đảm bảo thư mục lưu trữ Uploads tồn tại
+var uploadPath = builder.Configuration["Storage:UploadPath"] 
+    ?? Path.Combine(builder.Environment.ContentRootPath, "Uploads");
 if (!Directory.Exists(uploadPath))
 {
     Directory.CreateDirectory(uploadPath);
 }
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(uploadPath),
-    RequestPath = "/files",
-    ServeUnknownFileTypes = true
-});
 
 // CORS cần đặt trước Authentication/Authorization
 app.UseCors("AllowFrontend");

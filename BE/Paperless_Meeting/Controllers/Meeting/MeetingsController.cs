@@ -2,11 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Paperless_Meeting.DTOs.Meeting;
 using Paperless_Meeting.Repositories.Meeting;
+using Paperless_Meeting.Repositories.Participant;
 using Paperless_Meeting.Models;
 using System.Security.Claims;
-using Paperless_Meeting.Services.Meeting;
-using Paperless_Meeting.Services.Participant;
-using Paperless_Meeting.Repositories.Participant;
 
 namespace Paperless_Meeting.Controllers.Meeting
 {
@@ -16,36 +14,76 @@ namespace Paperless_Meeting.Controllers.Meeting
     public class MeetingsController : ControllerBase
     {
         private readonly IMeetingService _meetingService;
-        private readonly IParticipantService _participantService; // Thêm để lấy danh sách người tham gia => kiểm tra quyền vào meeting
+        private readonly IParticipantService _participantService;
+
         public MeetingsController(IMeetingService meetingService, IParticipantService participantService)
         {
             _meetingService = meetingService;
             _participantService = participantService;
         }
 
+        private int? GetCurrentUserId()
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(claim, out var id) && id > 0 ? id : null;
+        }
+
+        private bool IsCurrentUserAdmin()
+        {
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Lấy tất cả cuộc họp (Chỉ Admin / SuperAdmin)
+        /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> GetAllMeetings()
         {
             var meetings = await _meetingService.GetAllMeetingsAsync();
             return Ok(meetings);
         }
 
+        /// <summary>
+        /// Lấy danh sách cuộc họp của người dùng hiện tại
+        /// </summary>
         [HttpGet("user/my-meetings")]
+        [HttpGet("my-meetings")]
         public async Task<IActionResult> GetMyMeetings()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            if (userId == 0)
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                return Unauthorized(new { message = "Người dùng không hợp lệ." });
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng." });
             }
 
-            var meetings = await _meetingService.GetMeetingsByUserAsync(userId);
+            var meetings = await _meetingService.GetMeetingsByUserAsync(userId.Value);
             return Ok(meetings);
         }
 
+        /// <summary>
+        /// Lấy thông tin chi tiết cuộc họp theo ID (Kiểm tra quyền thành viên)
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMeetingById(int id)
         {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng." });
+            }
+
+            if (!IsCurrentUserAdmin())
+            {
+                var isParticipant = await _participantService.IsParticipantAsync(id, userId.Value);
+                if (!isParticipant)
+                {
+                    return StatusCode(403, new { message = "Bạn không có quyền xem thông tin cuộc họp này." });
+                }
+            }
+
             var meeting = await _meetingService.GetMeetingByIdAsync(id);
             if (meeting == null) return NotFound("Không tìm thấy cuộc họp.");
             
@@ -70,25 +108,24 @@ namespace Paperless_Meeting.Controllers.Meeting
             var createDto = new MeetingCreateDto
             {
                 Title = requestDto.Title,
-                RoomId = $"room-{Guid.NewGuid().ToString("N").Substring(0, 10)}",
                 Description = requestDto.Description,
                 StartTime = requestDto.StartTime,
                 EndTime = requestDto.EndTime,
-                Location = requestDto.Location
+                RoomId = requestDto.RoomId
             };
+
             if (createDto.StartTime >= createDto.EndTime)
             {
                 return BadRequest(new { message = "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc." });
             }
 
-            var creatorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            if (creatorId ==0)
+            var creatorId = GetCurrentUserId();
+            if (creatorId == null)
             {
-                return Unauthorized(new { message = "Người dùng không hợp lệ." });
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng." });
             }
     
-            var createdMeeting = await _meetingService.CreateMeetingAsync(createDto, creatorId);
-            
+            var createdMeeting = await _meetingService.CreateMeetingAsync(createDto, creatorId.Value);
             return CreatedAtAction(nameof(GetMeetingById), new { id = createdMeeting.MeetingId }, createdMeeting);
         }
 
@@ -116,13 +153,13 @@ namespace Paperless_Meeting.Controllers.Meeting
         [Authorize]
         public async Task<IActionResult> ExtendMeeting(int id)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            if (userId == 0)
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                return Unauthorized(new { message = "Người dùng không hợp lệ." });
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng." });
             }
 
-            var success = await _meetingService.ExtendMeetingAsync(id, userId);
+            var success = await _meetingService.ExtendMeetingAsync(id, userId.Value);
             if (!success) 
                 return BadRequest(new { message = "Không thể gia hạn cuộc họp. Chỉ Host của cuộc họp mới có quyền gia hạn hoặc cuộc họp không tồn tại." });
             
@@ -144,34 +181,38 @@ namespace Paperless_Meeting.Controllers.Meeting
         {
             var meeting = await _meetingService.GetMeetingByIdAsync(meetingId);
             if (meeting == null) return NotFound("Không tìm thấy cuộc họp.");
-            //Lấy danh sách người tham gia
-            var participants = await _participantService.GetMeetingParticipantsAsync(meetingId);
-            //Kiểm tra quyền tham gia
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var isParticipant = participants.Any(p => p.UserId == userId);
-            if (!isParticipant)
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                return BadRequest("Bạn không có quyền tham gia cuộc họp này.");
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng." });
             }
-            //Kiểm tra thời gian tham gia
+
+            // Admin hoặc người tham gia đều được phép vào
+            if (!IsCurrentUserAdmin())
+            {
+                var isParticipant = await _participantService.IsParticipantAsync(meetingId, userId.Value);
+                if (!isParticipant)
+                {
+                    return StatusCode(403, new { message = "Bạn không có quyền tham gia cuộc họp này." });
+                }
+            }
+
             var currentTime = DateTime.UtcNow;
             if (currentTime < meeting.StartTime || currentTime > meeting.EndTime)
             {
                 return BadRequest("Hiện không phải thời gian diễn ra cuộc họp.");
             }
+
             var roomId = meeting.RoomId;
             return Ok(new
             {
                 roomId,
-                signalRUrl = "/meetinghub",
-                meetingInfo = new
-                {
-                    meetingId,
-                    title = meeting.Title,
-                    startTime = meeting.StartTime.ToString("HH:mm dd/MM/yyyy"),
-                    endTime = meeting.EndTime.ToString("HH:mm dd/MM/yyyy")
-                },
-                message = "Kết nối thành công."
+                meetingId = meeting.MeetingId,
+                title = meeting.Title,
+                startTime = meeting.StartTime,
+                endTime = meeting.EndTime,
+                message = "Bạn có quyền tham gia cuộc họp này."
             });
         }
     }

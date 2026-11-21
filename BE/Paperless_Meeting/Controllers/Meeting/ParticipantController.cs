@@ -67,6 +67,22 @@ public class ParticipantController : ControllerBase
 
         try
         {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng" });
+            }
+
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+            var isHost = await _participantService.IsHostOfMeetingAsync(meetingId, currentUserId);
+
+            if (!isHost && !isAdmin)
+            {
+                return StatusCode(403, new { message = "Chỉ Host hoặc Admin mới có quyền thêm người tham gia" });
+            }
+
             var result = await _participantService.AddParticipantAsync(
                 meetingId, 
                 participantDto.UserId, 
@@ -102,12 +118,20 @@ public class ParticipantController : ControllerBase
 
         try
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng" });
+            }
+
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
             var isHost = await _participantService.IsHostOfMeetingAsync(meetingId, userId);
 
-            if (!isHost)
+            if (!isHost && !isAdmin)
             {
-                return Unauthorized(new { message = "Chỉ Host mới có quyền thêm người tham gia" });
+                return StatusCode(403, new { message = "Chỉ Host hoặc Admin mới có quyền thêm người tham gia" });
             }
             var results = await _participantService.AddMultipleParticipantsAsync(meetingId, addMultipleDto.Participants);
 
@@ -144,15 +168,23 @@ public class ParticipantController : ControllerBase
     {
         try
         {
-            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            // Chỉ Host mới có quyền xóa người tham gia 
-            if (userId != currentUserId)
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var currentUserId))
+            {
+                return Unauthorized(new { message = "Không thể xác định danh tính người dùng" });
+            }
+
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+
+            // Chỉ Host hoặc Admin mới có quyền xóa người tham gia (trừ khi tự rời phòng)
+            if (userId != currentUserId && !isAdmin)
             {
                 var isHost = await _participantService.IsHostOfMeetingAsync(meetingId, currentUserId);
-
                 if (!isHost)
                 {
-                    return Unauthorized(new { message = "Chỉ Host mới có quyền xóa người tham gia" });
+                    return StatusCode(403, new { message = "Chỉ Host hoặc Admin mới có quyền xóa người tham gia" });
                 }
             }
             

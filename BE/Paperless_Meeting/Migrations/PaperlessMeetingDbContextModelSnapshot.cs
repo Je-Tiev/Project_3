@@ -360,6 +360,8 @@ namespace Paperless_Meeting.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Token");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
@@ -430,6 +432,9 @@ namespace Paperless_Meeting.Migrations
                     b.HasIndex("PollId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("PollId", "UserId")
+                        .IsUnique();
 
                     b.ToTable("UserVotes");
                 });

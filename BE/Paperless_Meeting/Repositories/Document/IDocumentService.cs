@@ -9,5 +9,6 @@ public interface IDocumentService
     Task<bool> DeleteDocumentAsync(int documentId, int userId);
     Task<IEnumerable<DocumentDto>> GetDocumentsByMeetingAsync(int meetingId);
     Task<DocumentDto?> GetDocumentByIdAsync(int documentId);
-    
+    Task<bool> CanUserAccessDocumentAsync(int documentId, int userId, string? userRole);
+    string GetDocumentPhysicalPath(string filePath);
 }

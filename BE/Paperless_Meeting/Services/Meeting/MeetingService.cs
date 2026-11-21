@@ -59,45 +59,56 @@ namespace Paperless_Meeting.Services.Meeting
 
         public async Task<MeetingDetailDto> CreateMeetingAsync(MeetingCreateDto createDto, int creatorId)
         {
-            var meeting = new Models.Meeting
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                Title = createDto.Title,
-                RoomId = createDto.RoomId,
-                Description = createDto.Description,
-                StartTime = createDto.StartTime,
-                EndTime = createDto.EndTime,
-                Location = createDto.Location,
-                CreatedByUserId = creatorId,
-                Status = Models.Meeting.MeetingStatus.Scheduled
-            };
+                var meeting = new Models.Meeting
+                {
+                    Title = createDto.Title,
+                    RoomId = createDto.RoomId,
+                    Description = createDto.Description,
+                    StartTime = createDto.StartTime,
+                    EndTime = createDto.EndTime,
+                    Location = createDto.Location,
+                    CreatedByUserId = creatorId,
+                    Status = Models.Meeting.MeetingStatus.Scheduled
+                };
 
-            _context.Meetings.Add(meeting);
-            await _context.SaveChangesAsync();
+                _context.Meetings.Add(meeting);
+                await _context.SaveChangesAsync();
 
-            var creatorParticipant = new MeetingParticipant
+                var creatorParticipant = new MeetingParticipant
+                {
+                    MeetingId = meeting.MeetingId,
+                    UserId = creatorId,
+                    RoleInMeeting = MeetingParticipant.MeetingRole.Host,
+                    IsPresent = false
+                };
+
+                _context.MeetingParticipants.Add(creatorParticipant);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return new MeetingDetailDto
+                {
+                    MeetingId = meeting.MeetingId,
+                    RoomId = meeting.RoomId,
+                    Title = meeting.Title,
+                    Description = meeting.Description,
+                    StartTime = meeting.StartTime,
+                    EndTime = meeting.EndTime,
+                    Location = meeting.Location,
+                    Status = meeting.Status,
+                    CreatedByUserId = meeting.CreatedByUserId,
+                    CreatedByUserName = meeting.Creator?.FullName
+                };
+            }
+            catch
             {
-                MeetingId = meeting.MeetingId,
-                UserId = creatorId,
-                RoleInMeeting = MeetingParticipant.MeetingRole.Host,
-                IsPresent = false
-            };
-
-            _context.MeetingParticipants.Add(creatorParticipant);
-            await _context.SaveChangesAsync();
-
-            return new MeetingDetailDto
-            {
-                MeetingId = meeting.MeetingId,
-                RoomId = meeting.RoomId,
-                Title = meeting.Title,
-                Description = meeting.Description,
-                StartTime = meeting.StartTime,
-                EndTime = meeting.EndTime,
-                Location = meeting.Location,
-                Status = meeting.Status,
-                CreatedByUserId = meeting.CreatedByUserId,
-                CreatedByUserName = meeting.Creator?.FullName
-            };
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<bool> UpdateMeetingAsync(int meetingId, MeetingUpdateDto updateDto)

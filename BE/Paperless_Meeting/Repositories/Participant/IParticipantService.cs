@@ -9,4 +9,5 @@ public interface IParticipantService
     Task<bool> RemoveParticipantAsync(int meetingId, int userId);
     Task<List<AddParticipantResultDto>> AddMultipleParticipantsAsync(int meetingId, List<ParticipantDto> participants);
     Task<bool> IsHostOfMeetingAsync(int meetingId, int userId);
+    Task<bool> IsParticipantAsync(int meetingId, int userId);
 }

@@ -194,34 +194,45 @@ public class DocumentController : ControllerBase
     {
         try
         {
+            var userId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            // Kiểm tra quyền truy cập tài liệu (Chống IDOR)
+            var canAccess = await _documentService.CanUserAccessDocumentAsync(id, userId, userRole);
+            if (!canAccess)
+            {
+                return StatusCode(403, new { message = "Bạn không có quyền tải tài liệu này" });
+            }
+
             var document = await _documentService.GetDocumentByIdAsync(id);
-            
             if (document == null)
             {
                 return NotFound(new { message = "Không tìm thấy tài liệu" });
             }
 
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", document.FilePath.TrimStart('/'));
-            
+            var filePath = _documentService.GetDocumentPhysicalPath(document.FilePath);
             if (!System.IO.File.Exists(filePath))
             {
                 return NotFound(new { message = "File không tồn tại trên server" });
             }
 
             var memory = new MemoryStream();
-            using (var stream = new FileStream(filePath, FileMode.Open))
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 await stream.CopyToAsync(memory);
             }
             memory.Position = 0;
 
             var contentType = GetContentType(document.FileName);
-            
             return File(memory, contentType, document.FileName);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new { message = "Không thể xác định danh tính người dùng" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi khi download document");
+            _logger.LogError(ex, "Lỗi khi download document {DocumentId}", id);
             return StatusCode(500, new { message = "Đã xảy ra lỗi khi tải tài liệu" });
         }
     }

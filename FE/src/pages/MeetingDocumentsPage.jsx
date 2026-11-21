@@ -13,16 +13,53 @@ export default function MeetingDocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5075/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
   useEffect(() => {
-    const foundMeeting = meetings.find(m => `${m.id}` === `${meetingId}`);
-    if (foundMeeting) {
-      setMeeting(foundMeeting);
-      fetchDocuments(meetingId);
-    } else {
-      navigate('/');
+    let isMounted = true;
+
+    const loadMeeting = async () => {
+      // 1. Thử tìm trong danh sách meetings hiện có trong AppContext
+      let foundMeeting = meetings.find(m => `${m.id}` === `${meetingId}`);
+
+      // 2. Nếu F5 tải lại trang và meetings tạm rỗng, gọi API lấy thông tin cuộc họp trực tiếp
+      if (!foundMeeting) {
+        try {
+          const res = await apiCall(`/Meetings/${meetingId}`, { method: 'GET' });
+          if (res && (res.meetingId || res.id)) {
+            foundMeeting = {
+              id: res.meetingId || res.id,
+              meetingId: res.meetingId || res.id,
+              title: res.title,
+              description: res.description || '',
+              startTime: res.startTime,
+              endTime: res.endTime,
+              location: res.location || '',
+            };
+          }
+        } catch (err) {
+          console.warn('Không thể tải chi tiết cuộc họp:', err);
+        }
+      }
+
+      if (!isMounted) return;
+
+      if (foundMeeting) {
+        setMeeting(foundMeeting);
+        fetchDocuments(meetingId);
+      } else if (meetings.length > 0) {
+        // Chỉ chuyển hướng khi danh sách meetings đã được nạp xong mà thực sự không có ID này
+        navigate('/');
+      }
+    };
+
+    if (meetingId) {
+      loadMeeting();
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [meetingId, meetings, navigate]);
 
   const fetchDocuments = async (meetingId) => {

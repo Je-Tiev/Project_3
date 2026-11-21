@@ -1,0 +1,15 @@
+**/.git
+**/.gitignore
+**/.dockerignore
+**/.vscode
+**/.idea
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/Uploads
+**/uploads
+**/*.env*
+!**/*.env.example
+docs/
+.agent/

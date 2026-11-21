@@ -1,41 +1,50 @@
-version: "3.8"
 services:
   db:
     image: postgres:15
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: project3db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-paperless_meeting}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
+      timeout: 5s
       retries: 5
 
   backend:
-    build: ./BE/Paperless_Meeting
+    build:
+      context: ./BE/Paperless_Meeting
+      dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=project3db;Username=postgres;Password=${DB_PASSWORD};SSL Mode=Disable
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:-paperless_meeting};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres};SSL Mode=Prefer
+      - Jwt__Key=${JWT_SECRET_KEY:-DEV_JWT_SECRET_KEY_CHANGE_IN_PRODUCTION_ENV_MIN_32_BYTES_LONG}
+      - Jwt__Issuer=${JWT_ISSUER:-PaperlessMeetingBackend}
+      - Jwt__Audience=${JWT_AUDIENCE:-PaperlessMeetingFrontend}
+      - Storage__UploadPath=/app/Uploads
+    volumes:
+      - backend_uploads:/app/Uploads
     depends_on:
       db:
         condition: service_healthy
 
   frontend:
-    build: ./FE/FE
+    build:
+      context: ./FE
+      dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://backend:5000/api
-      # Khi deploy web lên server cần sửa
-      # - REACT_APP_HUB_URL=https://meeting.ngocmx.com/meetinghub
-      # - REACT_APP_API_URL=http://meeting.ngocmx.com/api
     depends_on:
       - backend
 
 volumes:
   postgres_data:
+  backend_uploads:

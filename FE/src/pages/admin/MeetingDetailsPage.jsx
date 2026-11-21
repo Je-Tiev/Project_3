@@ -107,8 +107,8 @@ const MeetingDetailsPage = ({ meetingId, onBack }) => {
       // Lưu vào sessionStorage
       sessionStorage.setItem(`joinInfo_${meetingId}`, JSON.stringify(joinInfo));
 
-      // Điều hướng sang MeetingPage
-      navigate(`/meeting/${meetingId}/lobby`);
+      // Điều hướng sang PreJoin Page để kiểm tra thiết bị và tham gia cuộc họp
+      navigate(`/meeting/${meetingId}/prejoin`);
     } catch (err) {
       console.error("Join failed:", err);
       alert(err?.message || "Không thể tham gia cuộc họp.");

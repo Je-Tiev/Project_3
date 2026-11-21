@@ -5,7 +5,11 @@ obj/
 *.exe
 *.pdb
 *.log
-*.json
 *.assets.json
 *.nuget.g.targets
 *.nuget.cache
+Uploads/
+uploads/
+appsettings.Production.json
+*.user
+*.suo

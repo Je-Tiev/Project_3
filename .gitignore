@@ -1,4 +1,4 @@
-# --- PHẦN CHO FRONTEND (Như cũ) ---
+# --- FRONTEND (Node / Vite) ---
 logs
 *.log
 npm-debug.log*
@@ -6,35 +6,37 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-node_modules
-dist
-dist-ssr
+node_modules/
+dist/
+dist-ssr/
 *.local
+
+# IDE & Editor
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 
-# --- PHẦN BỔ SUNG CHO BACKEND (C# / .NET) ---
-# Quan trọng: Chặn các thư mục build rác
-bin/
-obj/
-
-# Chặn các file thực thi và thư viện biên dịch
+# --- BACKEND (C# / .NET) ---
+**/bin/
+**/obj/
 *.dll
 *.exe
 *.pdb
 *.user
-
-# Các file cấu hình tạm của Visual Studio
 *.suo
 *.ntvs*
 *.njsproj
 *.sln.docstates
 
-# File môi trường (chứa mật khẩu/key - Cực quan trọng)
-.env
-*.env
+# --- THƯ MỤC LƯU TRỮ TỆP TIN (UPLOADS) ---
+Uploads/
+uploads/
+**/Uploads/
+**/uploads/
 
-# Bỏ qua file kế hoạch dự án
-PLAN.md
+# --- FILE MÔI TRƯỜNG & BÍ MẬT ---
+.env
+.env.*
+*.env
+!*.env.example

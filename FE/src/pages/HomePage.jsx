@@ -24,7 +24,7 @@ const HomePage = () => {
       <Header title="Phòng họp không giấy Đại học Bách khoa Hà Nội" />
       
       <div className="max-w-7xl mx-auto p-6">
-        {currentUser?.role === 'admin' && <AdminCreateMeeting />}
+        {(currentUser?.role?.toLowerCase() === 'admin' || currentUser?.role?.toLowerCase() === 'superadmin') && <AdminCreateMeeting />}
         <SearchBar />
         <MeetingTabs />
         <MeetingTable />

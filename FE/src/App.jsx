@@ -23,43 +23,43 @@ const AppContent = () => {
     );
   }
 
-  // Nếu là Admin
-  if (currentUser?.role === 'Admin') {
+  const role = currentUser?.role?.toString().toLowerCase();
+  const isAdmin = role === 'admin' || role === 'superadmin';
+
+  // Nếu là Admin / SuperAdmin
+  if (isAdmin) {
     return (
       <Routes>
         {/* Admin layout */}
         <Route path="/admin/*" element={<AdminLayout />} />
 
-        <Route path="/meeting/:meetingId/lobby" element={<MeetingLobby />} />
-
         {/* Chi tiết meeting trong admin */}
         <Route path="/admin/meeting/:meetingId" element={<MeetingDetailsPage />} />
 
-        {/* Admin vẫn được join meeting như user */}
+        {/* Prejoin, Documents và Tham gia meeting */}
+        <Route path="/meeting/:meetingId/prejoin" element={<MeetingPreJoinPage />} />
+        <Route path="/meeting/:meetingId/documents" element={<MeetingDocumentsPage />} />
         <Route path="/meeting/:meetingId" element={<MeetingDetailPage />} />
 
-        {/* Các route khác → về admin */}
+        {/* Trang chủ người dùng */}
+        <Route path="/" element={<HomePage />} />
+
+        {/* Các route không hợp lệ khác → chuyển hướng về admin */}
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     );
   }
 
-
-  // Nếu là User
+  // Nếu là User thông thường
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-
-      {/* Chi tiết meeting user */}
-      <Route path="/meeting/:meetingId" element={<MeetingDetailPage />} />
-
-      {/* Sai link → về trang chủ */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-
-      <Route path="/meeting/:meetingId/documents" element={<MeetingDocumentsPage />} />\
       <Route path="/meeting/:meetingId/prejoin" element={<MeetingPreJoinPage />} />
+      <Route path="/meeting/:meetingId/documents" element={<MeetingDocumentsPage />} />
       <Route path="/meeting/:meetingId" element={<MeetingDetailPage />} />
 
+      {/* Sai link → chuyển hướng về trang chủ */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

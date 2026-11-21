@@ -1,18 +1,18 @@
 import React from 'react';
 import { User, LogOut } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { formatTime } from '../utils/dateUtils';
+import LiveClock from './LiveClock';
 
 const Header = ({ title, showBackButton = false }) => {
-  const { currentTime, currentUser, logout } = useApp();
+  const { currentUser, logout } = useApp();
 
   const handleLogout = () => {
     logout();
-    window.location.hash = '/login';
+    window.location.href = '/login';
   };
 
   const handleBack = () => {
-    window.location.hash = '/';
+    window.location.href = '/';
   };
 
   return (
@@ -30,7 +30,7 @@ const Header = ({ title, showBackButton = false }) => {
           <h1 className="text-2xl font-bold">{title}</h1>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm">{formatTime(currentTime)}</span>
+          <LiveClock className="text-sm font-medium" />
           {currentUser && (
             <>
               <div className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-lg">

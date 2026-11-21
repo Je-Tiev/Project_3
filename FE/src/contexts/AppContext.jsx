@@ -5,25 +5,28 @@ import { apiCall } from '../utils/api';
 
 const AppContext = createContext(null);
 
+export const normalizeStatus = (status) => {
+  if (status === null || status === undefined) return 'not_started';
+  const s = String(status).trim().toLowerCase();
+  if (s === '0' || s === 'scheduled' || s === 'not_started') return 'not_started';
+  if (s === '1' || s === 'inprogress' || s === 'in_progress' || s === 'ongoing') return 'ongoing';
+  if (s === '2' || s === 'finished' || s === 'completed') return 'completed';
+  if (s === '3' || s === 'cancelled' || s === 'postponed') return 'postponed';
+  return 'not_started';
+};
+
 export const AppProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [deviceStatus, setDeviceStatus] = useState('ready');
   const [currentMeeting, setCurrentMeeting] = useState(null);
   const [meetings, setMeetings] = useState([]);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState('not_started');
   const [searchFilters, setSearchFilters] = useState({
     startDate: '04/11/2025',
     endDate: '31/12/2025',
     filterOption: 'all'
   });
-
-  // Timer cho currentTime
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Save meetings to localStorage
   useEffect(() => {
@@ -53,16 +56,16 @@ export const AppProvider = ({ children }) => {
           startTime: m.startTime,
           endTime: m.endTime,
           location: m.location || '',
-          status: ['not_started', 'ongoing', 'completed', 'postponed'][m.status] || 'not_started',
+          status: normalizeStatus(m.status),
           date: startDate.toLocaleDateString('vi-VN'),
           dayOfWeek: dayOfWeek,
           session: startDate.getHours() < 12 ? 'Buổi sáng' : 'Buổi chiều',
           time: startDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
           file_rev: m.file_rev || '',
-        file_rev_url: m.file_rev_url || '',  // ← QUAN TRỌNG cho link download
-        file_pre: m.file_pre || '',
-        file_pre_url: m.file_pre_url || '',  // ← QUAN TRỌNG cho link download
-          approved: m.status === 0,
+          file_rev_url: m.file_rev_url || '',  // ← QUAN TRỌNG cho link download
+          file_pre: m.file_pre || '',
+          file_pre_url: m.file_pre_url || '',  // ← QUAN TRỌNG cho link download
+          approved: normalizeStatus(m.status) === 'not_started',
         };
       });
       setMeetings(convertedMeetings);
@@ -152,7 +155,7 @@ export const AppProvider = ({ children }) => {
       
       const meetingData = {
         title: payload.title,
-        description: payload.location || '',
+        description: payload.description || '',
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         location: payload.location || '',
@@ -206,7 +209,6 @@ export const AppProvider = ({ children }) => {
     deviceStatus,
     currentMeeting,
     meetings,
-    currentTime,
     activeTab,
     setActiveTab,
     searchFilters,
@@ -217,7 +219,8 @@ export const AppProvider = ({ children }) => {
     login,
     logout,
     startMeeting,
-    endMeeting
+    endMeeting,
+    normalizeStatus
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
