@@ -90,7 +90,7 @@ const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-text">Dashboard</h1>
         <button
-          onClick={onCreateMeeting}
+          onClick={onCreateMeeting || (() => navigate('/admin/create-meeting'))}
           className="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-button font-semibold flex items-center gap-2 transition-colors"
         >
           <Plus className="w-5 h-5" /> Create New Meeting
@@ -110,7 +110,7 @@ const DashboardPage = ({ onCreateMeeting, onViewAllMeetings }) => {
       <div className="flex justify-between items-center mt-6 mb-2">
         <h2 className="text-xl font-semibold text-text">Today Meetings</h2>
         <button
-          onClick={onViewAllMeetings}
+          onClick={onViewAllMeetings || (() => navigate('/admin/meetings'))}
           className="text-primary font-semibold hover:underline"
         >
           View All

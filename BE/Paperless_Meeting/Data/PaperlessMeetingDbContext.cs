@@ -21,6 +21,7 @@ public class PaperlessMeetingDbContext : DbContext
     public DbSet<Paperless_Meeting.Models.User> Users { get; set; }
     public DbSet<Paperless_Meeting.Models.UserVote> UserVotes { get; set; }
     public DbSet<Paperless_Meeting.Models.RefreshToken> RefreshTokens { get; set; }
+    public DbSet<Paperless_Meeting.Models.Room> Rooms { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -117,6 +118,47 @@ public class PaperlessMeetingDbContext : DbContext
             new Department { DepartmentId = 3, DepartmentName = "Phòng Kế toán" },
             new Department { DepartmentId = 4, DepartmentName = "Ban Giám đốc" },
             new Department { DepartmentId = 5, DepartmentName = "Phòng Nhân sự" }
+        );
+
+        // Liên kết Phòng họp vật lý (PhysicalRoom) với Meeting
+        modelBuilder.Entity<Meeting>()
+            .HasOne(m => m.PhysicalRoom)
+            .WithMany(r => r.Meetings)
+            .HasForeignKey(m => m.PhysicalRoomId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Seed danh mục phòng họp vật lý ban đầu
+        modelBuilder.Entity<Room>().HasData(
+            new Room
+            {
+                RoomId = 1,
+                RoomName = "Conference Room A",
+                Location = "Tòa nhà A - Tầng 2",
+                Capacity = 30,
+                Equipment = "Màn hình LED, Hệ thống âm thanh, Camera 360",
+                Status = RoomStatus.Available,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            },
+            new Room
+            {
+                RoomId = 2,
+                RoomName = "Meeting Room 3",
+                Location = "Tòa nhà B - Tầng 3",
+                Capacity = 15,
+                Equipment = "Máy chiếu, Bảng tương tác",
+                Status = RoomStatus.InUse,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            },
+            new Room
+            {
+                RoomId = 3,
+                RoomName = "Boardroom",
+                Location = "Tòa nhà C - Tầng 5",
+                Capacity = 50,
+                Equipment = "Hội nghị truyền hình 4K, Micro đại biểu",
+                Status = RoomStatus.Available,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            }
         );
     }
 }

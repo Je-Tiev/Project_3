@@ -11,6 +11,20 @@ const CreateMeetingForm = ({ onClose, onSave }) => {
   const [message, setMessage] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [allUsers, setAllUsers] = useState([]); // all users from /Auth/users
+  const [availableRooms, setAvailableRooms] = useState([]);
+
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        const res = await apiCall('/Rooms', { method: 'GET' });
+        const list = Array.isArray(res) ? res : (res.value || res.data || []);
+        setAvailableRooms(list);
+      } catch (err) {
+        console.warn('Could not load physical rooms:', err);
+      }
+    };
+    loadRooms();
+  }, []);
 
   // departments derived from users: [{ id, name }]
   const departments = useMemo(() => {
@@ -352,8 +366,30 @@ const CreateMeetingForm = ({ onClose, onSave }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-text mb-2">Room</label>
-                  <input name="room" value={form.room} onChange={handleChange} className="w-full px-4 py-2 border border-secondary-dark rounded-button" placeholder="Enter room" />
+                  <label className="block text-sm font-medium text-text mb-2">Phòng họp vật lý</label>
+                  {availableRooms.length > 0 ? (
+                    <select
+                      name="room"
+                      value={form.room}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-secondary-dark rounded-button bg-white text-sm"
+                    >
+                      <option value="">-- Chọn phòng họp vật lý (tùy chọn) --</option>
+                      {availableRooms.map((r) => (
+                        <option key={r.roomId} value={r.roomName}>
+                          {r.roomName} ({r.location || 'Chưa có vị trí'} - Sức chứa: {r.capacity} người - {r.status === 'Available' ? 'Sẵn sàng' : r.status})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      name="room"
+                      value={form.room}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-secondary-dark rounded-button"
+                      placeholder="Nhập địa điểm / phòng họp"
+                    />
+                  )}
                 </div>
 
                 <div>

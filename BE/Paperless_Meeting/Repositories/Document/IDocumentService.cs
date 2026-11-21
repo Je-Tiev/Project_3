@@ -8,6 +8,7 @@ public interface IDocumentService
     Task<DocumentDto> UploadDocumentStreamAsync(int meetingId, Stream fileStream, string contentType, string visibility, int userId);
     Task<bool> DeleteDocumentAsync(int documentId, int userId);
     Task<IEnumerable<DocumentDto>> GetDocumentsByMeetingAsync(int meetingId);
+    Task<List<DocumentDto>> GetAllDocumentsAsync();
     Task<DocumentDto?> GetDocumentByIdAsync(int documentId);
     Task<bool> CanUserAccessDocumentAsync(int documentId, int userId, string? userRole);
     string GetDocumentPhysicalPath(string filePath);

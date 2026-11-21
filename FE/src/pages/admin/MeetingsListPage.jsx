@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Eye, Edit, Trash2, FileText, Plus, X } from 'lucide-react';
 import { apiCall } from '../../utils/api';
 import MeetingDetailsPage from './MeetingDetailsPage';
+import { useNavigate } from 'react-router-dom';
 
 const MeetingsListPage = ({ onCreateMeeting }) => {
+  const navigate = useNavigate();
   const [meetings, setMeetings] = useState([]);
   const [filteredMeetings, setFilteredMeetings] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -159,7 +161,7 @@ const MeetingsListPage = ({ onCreateMeeting }) => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-text">Meetings List</h1>
         <button
-         onClick={onCreateMeeting}
+         onClick={onCreateMeeting || (() => navigate('/admin/create-meeting'))}
          className="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-button font-semibold flex items-center gap-2 transition-colors">
           <Plus className="w-5 h-5" /> Create New Meeting
         </button>

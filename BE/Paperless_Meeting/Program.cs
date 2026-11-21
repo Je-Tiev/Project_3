@@ -13,11 +13,15 @@ using Paperless_Meeting.Repositories.Auth;
 using Paperless_Meeting.Repositories.Document;
 using Paperless_Meeting.Repositories.Meeting;
 using Paperless_Meeting.Repositories.Participant;
+using Paperless_Meeting.Repositories.Department;
+using Paperless_Meeting.Repositories.Room;
 using Paperless_Meeting.Services.Auth;
 using Paperless_Meeting.Services.Document;
 using Paperless_Meeting.Services.Meeting;
 using Paperless_Meeting.Services.Participant;
 using Paperless_Meeting.Services.Poll;
+using Paperless_Meeting.Services.Department;
+using Paperless_Meeting.Services.Room;
 
 var builder = WebApplication.CreateBuilder(args);
 // --- Bật logging đầy đủ cho console ---
@@ -98,6 +102,8 @@ builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
 builder.Services.AddScoped<IParticipantService, ParticipantService>();
 builder.Services.AddScoped<IPollService, PollService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey) || Encoding.UTF8.GetBytes(jwtKey).Length < 32)

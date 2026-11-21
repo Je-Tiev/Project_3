@@ -351,6 +351,8 @@ public class DocumentService : IDocumentService
     public async Task<IEnumerable<DocumentDto>> GetDocumentsByMeetingAsync(int meetingId)
     {
         var documents = await _context.Documents
+            .Include(d => d.Meeting)
+            .Include(d => d.Uploader)
             .Where(d => d.MeetingId == meetingId)
             .OrderByDescending(d => d.UploadDate)
             .ToListAsync();
@@ -358,9 +360,24 @@ public class DocumentService : IDocumentService
         return documents.Select(MapToDto);
     }
 
+    public async Task<List<DocumentDto>> GetAllDocumentsAsync()
+    {
+        var documents = await _context.Documents
+            .Include(d => d.Meeting)
+            .Include(d => d.Uploader)
+            .OrderByDescending(d => d.UploadDate)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return documents.Select(MapToDto).ToList();
+    }
+
     public async Task<DocumentDto?> GetDocumentByIdAsync(int documentId)
     {
-        var document = await _context.Documents.FindAsync(documentId);
+        var document = await _context.Documents
+            .Include(d => d.Meeting)
+            .Include(d => d.Uploader)
+            .FirstOrDefaultAsync(d => d.DocumentId == documentId);
         return document != null ? MapToDto(document) : null;
     }
 
@@ -373,7 +390,10 @@ public class DocumentService : IDocumentService
             FilePath = document.FilePath,
             Visibility = document.Visibility.ToString(),
             UploadedBy = document.UploadedBy,
-            UploadDate = document.UploadDate
+            UploadDate = document.UploadDate,
+            MeetingId = document.MeetingId,
+            MeetingTitle = document.Meeting?.Title,
+            UploaderName = document.Uploader?.FullName ?? document.Uploader?.Username
         };
     }
 }

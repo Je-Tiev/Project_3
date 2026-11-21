@@ -20,4 +20,10 @@ public class DocumentDto
     public int UploadedBy { get; set; }
 
     public DateTime UploadDate { get; set; }
+
+    public int? MeetingId { get; set; }
+
+    public string? MeetingTitle { get; set; }
+
+    public string? UploaderName { get; set; }
 }

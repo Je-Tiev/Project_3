@@ -139,6 +139,25 @@ public class DocumentController : ControllerBase
     }
 
     /// <summary>
+    /// Lấy toàn bộ danh sách tài liệu trong hệ thống (dành cho Admin)
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public async Task<IActionResult> GetAllDocuments()
+    {
+        try
+        {
+            var documents = await _documentService.GetAllDocumentsAsync();
+            return Ok(documents);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi lấy toàn bộ danh sách documents");
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi lấy danh sách tài liệu" });
+        }
+    }
+
+    /// <summary>
     /// Lấy danh sách tài liệu của một cuộc họp
     /// </summary>
     /// <param name="meetingId">ID của cuộc họp</param>
@@ -216,15 +235,9 @@ public class DocumentController : ControllerBase
                 return NotFound(new { message = "File không tồn tại trên server" });
             }
 
-            var memory = new MemoryStream();
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-            {
-                await stream.CopyToAsync(memory);
-            }
-            memory.Position = 0;
-
             var contentType = GetContentType(document.FileName);
-            return File(memory, contentType, document.FileName);
+            // Sử dụng PhysicalFile kèm enableRangeProcessing để stream trực tiếp, hỗ trợ resume & HTTP 206
+            return PhysicalFile(filePath, contentType, document.FileName, enableRangeProcessing: true);
         }
         catch (UnauthorizedAccessException)
         {
@@ -234,6 +247,51 @@ public class DocumentController : ControllerBase
         {
             _logger.LogError(ex, "Lỗi khi download document {DocumentId}", id);
             return StatusCode(500, new { message = "Đã xảy ra lỗi khi tải tài liệu" });
+        }
+    }
+
+    /// <summary>
+    /// Stream xem trực tiếp tài liệu trong ứng dụng (In-App Document Viewer)
+    /// </summary>
+    /// <param name="id">ID tài liệu</param>
+    /// <returns>Stream file hỗ trợ HTTP Range Requests</returns>
+    [HttpGet("{id}/view")]
+    public async Task<IActionResult> ViewDocument(int id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var canAccess = await _documentService.CanUserAccessDocumentAsync(id, userId, userRole);
+            if (!canAccess)
+            {
+                return StatusCode(403, new { message = "Bạn không có quyền xem tài liệu này" });
+            }
+
+            var document = await _documentService.GetDocumentByIdAsync(id);
+            if (document == null)
+            {
+                return NotFound(new { message = "Không tìm thấy tài liệu" });
+            }
+
+            var filePath = _documentService.GetDocumentPhysicalPath(document.FilePath);
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound(new { message = "File không tồn tại trên server" });
+            }
+
+            var contentType = GetContentType(document.FileName);
+            return PhysicalFile(filePath, contentType, enableRangeProcessing: true);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new { message = "Không thể xác định danh tính người dùng" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi stream document {DocumentId}", id);
+            return StatusCode(500, new { message = "Đã xảy ra lỗi khi hiển thị tài liệu" });
         }
     }
 

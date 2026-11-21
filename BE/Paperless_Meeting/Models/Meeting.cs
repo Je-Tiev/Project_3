@@ -34,6 +34,10 @@ public class Meeting
     public enum MeetingStatus { Scheduled, InProgress, Finished, Cancelled }
     public MeetingStatus Status  { get; set; }
     
+    public int? PhysicalRoomId { get; set; }
+    [ForeignKey("PhysicalRoomId")]
+    public virtual Room? PhysicalRoom { get; set; }
+
     public virtual ICollection<MeetingParticipant> Participants { get; set; }
     public virtual ICollection<Document> Documents { get; set; }
     public virtual ICollection<Note> Notes { get; set; }

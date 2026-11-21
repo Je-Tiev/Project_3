@@ -7,6 +7,14 @@ import HomePage from './pages/HomePage';
 import MeetingDetailPage from './pages/MeetingDetailPage';
 import MeetingDetailsPage from './pages/admin/MeetingDetailsPage';
 import AdminLayout from './pages/admin/AdminLayout';
+import DashboardPage from './pages/admin/DashboardPage';
+import MeetingsListPage from './pages/admin/MeetingsListPage';
+import RoomsPage from './pages/admin/RoomsPage';
+import DocumentsPage from './pages/admin/DocumentsPage';
+import UsersPage from './pages/admin/UsersPage';
+import ReportsPage from './pages/admin/ReportsPage';
+import SettingsPage from './pages/admin/SettingsPage';
+import CreateMeetingForm from './components/admin/CreateMeetingForm';
 import MeetingPreJoinPage from './pages/MeetingPreJoinPage';
 import MeetingDocumentsPage from './pages/MeetingDocumentsPage';
 
@@ -30,8 +38,18 @@ const AppContent = () => {
   if (isAdmin) {
     return (
       <Routes>
-        {/* Admin layout */}
-        <Route path="/admin/*" element={<AdminLayout />} />
+        {/* Admin layout với Nested Routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="meetings" element={<MeetingsListPage />} />
+          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="create-meeting" element={<CreateMeetingForm />} />
+        </Route>
 
         {/* Chi tiết meeting trong admin */}
         <Route path="/admin/meeting/:meetingId" element={<MeetingDetailsPage />} />

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { ArrowLeft, FileText, Download, Eye, File } from 'lucide-react';
 import { apiCall } from '../utils/api';
+import InAppDocumentViewer from '../components/InAppDocumentViewer';
 
 export default function MeetingDocumentsPage() {
   const { meetingId } = useParams();
@@ -12,6 +13,7 @@ export default function MeetingDocumentsPage() {
   const [meeting, setMeeting] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState(null);
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -79,22 +81,8 @@ export default function MeetingDocumentsPage() {
     }
   };
 
-  const handleViewDocument = async (documentId, fileName) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${API_BASE_URL}/Document/DownloadDocument/${documentId}/download`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      if (!response.ok) throw new Error('Không thể tải file');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-    } catch (error) {
-      console.error('Lỗi xem file:', error);
-      alert('Không thể xem file!');
-    }
+  const handleViewDocument = (documentId, fileName) => {
+    setViewingDoc({ id: documentId, name: fileName });
   };
 
   const handleDownloadDocument = async (documentId, fileName) => {
@@ -248,6 +236,14 @@ export default function MeetingDocumentsPage() {
           </div>
         </div>
       </div>
+
+      {viewingDoc && (
+        <InAppDocumentViewer
+          documentId={viewingDoc.id}
+          fileName={viewingDoc.name}
+          onClose={() => setViewingDoc(null)}
+        />
+      )}
     </div>
   );
 }

@@ -159,6 +159,9 @@ namespace Paperless_Meeting.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<int?>("PhysicalRoomId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -173,6 +176,8 @@ namespace Paperless_Meeting.Migrations
                     b.HasKey("MeetingId");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PhysicalRoomId");
 
                     b.ToTable("Meetings");
                 });
@@ -367,6 +372,73 @@ namespace Paperless_Meeting.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("Paperless_Meeting.Models.Room", b =>
+                {
+                    b.Property<int>("RoomId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RoomId"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Equipment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("RoomName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("RoomId");
+
+                    b.ToTable("Rooms");
+
+                    b.HasData(
+                        new
+                        {
+                            RoomId = 1,
+                            Capacity = 30,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Equipment = "Màn hình LED, Hệ thống âm thanh, Camera 360",
+                            Location = "Tòa nhà A - Tầng 2",
+                            RoomName = "Conference Room A",
+                            Status = 0
+                        },
+                        new
+                        {
+                            RoomId = 2,
+                            Capacity = 15,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Equipment = "Máy chiếu, Bảng tương tác",
+                            Location = "Tòa nhà B - Tầng 3",
+                            RoomName = "Meeting Room 3",
+                            Status = 1
+                        },
+                        new
+                        {
+                            RoomId = 3,
+                            Capacity = 50,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Equipment = "Hội nghị truyền hình 4K, Micro đại biểu",
+                            Location = "Tòa nhà C - Tầng 5",
+                            RoomName = "Boardroom",
+                            Status = 0
+                        });
+                });
+
             modelBuilder.Entity("Paperless_Meeting.Models.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -485,7 +557,14 @@ namespace Paperless_Meeting.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Paperless_Meeting.Models.Room", "PhysicalRoom")
+                        .WithMany("Meetings")
+                        .HasForeignKey("PhysicalRoomId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Creator");
+
+                    b.Navigation("PhysicalRoom");
                 });
 
             modelBuilder.Entity("Paperless_Meeting.Models.MeetingAudio", b =>

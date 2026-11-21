@@ -103,18 +103,18 @@ flowchart TD
 
 #### Danh Sách Nhiệm Vụ Cụ Thể:
 ##### Backend:
-- [ ] **Task 1.1:** Xây dựng `DepartmentsController` và `DepartmentService` (CRUD phòng ban, gán user vào phòng ban).
-- [ ] **Task 1.2:** Thêm Entity `Room` (Phòng họp vật lý: tên phòng, sức chứa, trang thiết bị, trạng thái sẵn sàng), tạo migration bổ sung bảng `Rooms` và liên kết với `Meeting.RoomId`.
-- [ ] **Task 1.3:** Xây dựng `RoomsController` và `RoomService` (CRUD phòng họp, kiểm tra trùng lịch phòng vật lý).
-- [ ] **Task 1.4:** Nâng cấp `DocumentService`: Quản lý phân quyền tài liệu theo cấp độ bảo mật (`Public`, `Internal`, `Confidential`) dựa trên vai trò của đại biểu trong cuộc họp.
-- [ ] **Task 1.5:** Xây dựng API stream tài liệu tối ưu (HTTP Range Requests hỗ trợ tua/tải từng phần PDF) thay vì đọc toàn bộ vào MemoryStream.
+- [x] **Task 1.1:** Xây dựng `DepartmentsController` và `DepartmentService` (CRUD phòng ban, gán user vào phòng ban).
+- [x] **Task 1.2:** Thêm Entity `Room` (Phòng họp vật lý: tên phòng, sức chứa, trang thiết bị, trạng thái sẵn sàng), tạo migration bổ sung bảng `Rooms` và liên kết với `Meeting.RoomId`.
+- [x] **Task 1.3:** Xây dựng `RoomsController` và `RoomService` (CRUD phòng họp, kiểm tra trùng lịch phòng vật lý).
+- [x] **Task 1.4:** Nâng cấp `DocumentService`: Quản lý phân quyền tài liệu theo cấp độ bảo mật (`Public`, `Internal`, `Confidential`) dựa trên vai trò của đại biểu trong cuộc họp.
+- [x] **Task 1.5:** Xây dựng API stream tài liệu tối ưu (HTTP Range Requests hỗ trợ tua/tải từng phần PDF) thay vì đọc toàn bộ vào MemoryStream.
 
 ##### Frontend:
-- [ ] **Task 1.6:** Tích hợp thư viện `react-pdf` / PDF.js vào FE. Xây dựng component `<InAppDocumentViewer />` cho phép xem trực tiếp văn bản PDF trong modal hoặc split-view bên cạnh màn hình họp.
-- [ ] **Task 1.7:** Thay thế 100% Mock Data trong [RoomsPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/RoomsPage.jsx) bằng API call thật tới `RoomsController`.
-- [ ] **Task 1.8:** Thay thế 100% Mock Data trong [DocumentsPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/DocumentsPage.jsx) bằng API call thật, gắn handler tải/xem tài liệu.
-- [ ] **Task 1.9:** Tái cấu trúc [AdminLayout.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/AdminLayout.jsx) sử dụng React Router Nested Routes (`<Outlet />`), hỗ trợ bookmark URL và nút Back trình duyệt.
-- [ ] **Task 1.10:** Hợp nhất 2 form tạo cuộc họp trùng lặp ([AdminCreateMeeting.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/components/AdminCreateMeeting.jsx) và [CreateMeetingForm.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/components/admin/CreateMeetingForm.jsx)) thành 1 component chuẩn duy nhất.
+- [x] **Task 1.6:** Tích hợp thư viện `react-pdf` / PDF.js vào FE. Xây dựng component `<InAppDocumentViewer />` cho phép xem trực tiếp văn bản PDF trong modal hoặc split-view bên cạnh màn hình họp.
+- [x] **Task 1.7:** Thay thế 100% Mock Data trong [RoomsPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/RoomsPage.jsx) bằng API call thật tới `RoomsController`.
+- [x] **Task 1.8:** Thay thế 100% Mock Data trong [DocumentsPage.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/DocumentsPage.jsx) bằng API call thật, gắn handler tải/xem tài liệu.
+- [x] **Task 1.9:** Tái cấu trúc [AdminLayout.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/pages/admin/AdminLayout.jsx) sử dụng React Router Nested Routes (`<Outlet />`), hỗ trợ bookmark URL và nút Back trình duyệt.
+- [x] **Task 1.10:** Hợp nhất 2 form tạo cuộc họp trùng lặp ([AdminCreateMeeting.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/components/AdminCreateMeeting.jsx) và [CreateMeetingForm.jsx](file:///c:/Users/coc14/OneDrive/Documents/GitHub/Project_3/FE/src/components/admin/CreateMeetingForm.jsx)) thành 1 component chuẩn duy nhất.
 
 #### Tiêu Chí Nghiệm Thu (Acceptance Criteria - Phase 1):
 1. Admin có thể tạo mới, chỉnh sửa và quản lý danh mục Phòng ban và Phòng họp vật lý qua giao diện web.
