@@ -19,12 +19,6 @@ namespace Paperless_Meeting.Migrations
                 nullable: false,
                 defaultValue: false);
 
-            migrationBuilder.AddColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Notes",
-                type: "timestamp with time zone",
-                nullable: true);
-
             migrationBuilder.CreateIndex(
                 name: "IX_Notes_MeetingId_UserId",
                 table: "Notes",
@@ -102,10 +96,6 @@ namespace Paperless_Meeting.Migrations
             migrationBuilder.DropColumn(
                 name: "IsSecret",
                 table: "Polls");
-
-            migrationBuilder.DropColumn(
-                name: "UpdatedAt",
-                table: "Notes");
 
             migrationBuilder.DropColumn(
                 name: "Status",
