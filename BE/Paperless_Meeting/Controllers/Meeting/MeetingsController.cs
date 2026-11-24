@@ -111,7 +111,8 @@ namespace Paperless_Meeting.Controllers.Meeting
                 Description = requestDto.Description,
                 StartTime = requestDto.StartTime,
                 EndTime = requestDto.EndTime,
-                RoomId = requestDto.RoomId
+                Location = requestDto.Location ?? string.Empty,
+                RoomId = !string.IsNullOrWhiteSpace(requestDto.RoomId) ? requestDto.RoomId : Guid.NewGuid().ToString("N")[..8]
             };
 
             if (createDto.StartTime >= createDto.EndTime)

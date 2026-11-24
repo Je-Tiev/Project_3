@@ -112,6 +112,8 @@ Hệ thống đọc cấu hình thông qua tệp `.env` ở thư mục gốc ho�
 | `Webrtc__TurnPassword` | Backend / WebRTC | Mật khẩu xác thực với máy chủ Coturn | `meeting2026secret` |
 | `MINIO_ROOT_USER` | Object Storage MinIO | Tài khoản root quản trị MinIO | `paperless_admin` |
 | `MINIO_ROOT_PASSWORD` | Object Storage MinIO | Mật khẩu root quản trị MinIO | `paperless_minio_secret_2026` |
+| `MINIO_PORT` | Object Storage MinIO | Cổng tiếp nhận API S3 trên máy chủ host | `9000` |
+| `MINIO_CONSOLE_PORT` | Object Storage MinIO | Cổng giao diện Web MinIO Console trên host | `9001` |
 | `VITE_API_URL` | Frontend React / Vite | Đường dẫn gốc cho các API RESTful | `/api` |
 | `VITE_HUB_URL` | Frontend React / Vite | Đường dẫn WebSocket cho SignalR Hub | `/meetinghub` |
 

@@ -18,4 +18,6 @@ public class MeetingCreateRequestDto
 
     [StringLength(200)]
     public string? Location { get; set; }
+
+    public string? RoomId { get; set; }
 }

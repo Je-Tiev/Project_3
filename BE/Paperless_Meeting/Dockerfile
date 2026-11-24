@@ -9,7 +9,7 @@ RUN dotnet restore
 COPY . ./
 
 # Publish
-RUN dotnet publish -c Release -o /app --self-contained false
+RUN dotnet publish Paperless_Meeting.csproj -c Release -o /app --self-contained false
 
 # ---- RUNTIME ----
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime

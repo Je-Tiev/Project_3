@@ -12,7 +12,7 @@ using Paperless_Meeting.Data;
 namespace Paperless_Meeting.Migrations
 {
     [DbContext(typeof(PaperlessMeetingDbContext))]
-    [Migration(20261121000000_InitialCreate)]
+    [Migration("20261121000000_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

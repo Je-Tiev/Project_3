@@ -52,7 +52,4 @@ const AdminHeader = () => {
 };
 
 export default AdminHeader;
-};
-
-export default AdminHeader;
 

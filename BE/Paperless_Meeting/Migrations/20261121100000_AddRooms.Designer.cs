@@ -12,7 +12,7 @@ using Paperless_Meeting.Data;
 namespace Paperless_Meeting.Migrations
 {
     [DbContext(typeof(PaperlessMeetingDbContext))]
-    [Migration(20261121100000_AddRooms)]
+    [Migration("20261121100000_AddRooms")]
     partial class AddRooms
     {
         /// <inheritdoc />

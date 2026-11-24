@@ -255,7 +255,7 @@ namespace Paperless_Meeting.Services.Auth
             // Cập nhật Department
             if (updateDto.DepartmentId.HasValue)
             {
-                var department = await _context.Set<Department>().FindAsync(updateDto.DepartmentId);
+                var department = await _context.Departments.FindAsync(updateDto.DepartmentId);
                 if (department == null)
                 {
                     return "Bộ phận không tồn tại.";
@@ -297,7 +297,7 @@ namespace Paperless_Meeting.Services.Auth
             // Cập nhật Department
             if (updateDto.DepartmentId.HasValue)
             {
-                var department = await _context.Set<Department>().FindAsync(updateDto.DepartmentId);
+                var department = await _context.Departments.FindAsync(updateDto.DepartmentId);
                 if (department == null)
                 {
                     return "Bộ phận không tồn tại.";
