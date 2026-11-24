@@ -36,9 +36,6 @@ namespace Paperless_Meeting.Tests.UnitTests
 
         private async Task SeedPollDataAsync(PaperlessMeetingDbContext context)
         {
-            // Seed Department
-            context.Departments.Add(new Department { DepartmentId = 1, DepartmentName = "Ban Giám đốc" });
-
             // Seed Users
             context.Users.AddRange(
                 new User { UserId = 1, Username = "organizer", FullName = "Organizer", Email = "org@hust.edu.vn", PasswordHash = "h", DepartmentId = 1, Role = User.UserRole.User },

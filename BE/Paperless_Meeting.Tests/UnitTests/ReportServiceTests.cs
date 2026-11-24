@@ -54,7 +54,7 @@ namespace Paperless_Meeting.Tests.UnitTests
                 PhysicalRoomId = 1,
                 StartTime = DateTime.UtcNow,
                 EndTime = DateTime.UtcNow.AddHours(1),
-                CreatedAt = DateTime.UtcNow
+                Location = "Phòng Họp 1"
             });
 
             await context.SaveChangesAsync();

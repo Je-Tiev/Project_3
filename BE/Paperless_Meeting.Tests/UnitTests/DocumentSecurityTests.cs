@@ -56,10 +56,10 @@ namespace Paperless_Meeting.Tests.UnitTests
             };
             context.Meetings.Add(meeting);
 
-            // Seed Participants: UserId 1 (Host) and UserId 3 (Participant)
+            // Seed Participants: UserId 1 (Host) and UserId 3 (Member)
             context.MeetingParticipants.AddRange(
                 new MeetingParticipant { MeetingId = 10, UserId = 1, RoleInMeeting = MeetingParticipant.MeetingRole.Host, IsPresent = true },
-                new MeetingParticipant { MeetingId = 10, UserId = 3, RoleInMeeting = MeetingParticipant.MeetingRole.Participant, IsPresent = true }
+                new MeetingParticipant { MeetingId = 10, UserId = 3, RoleInMeeting = MeetingParticipant.MeetingRole.Member, IsPresent = true }
             );
 
             // Seed Document (Uploaded by UserId 2 in Meeting 10)
@@ -67,11 +67,11 @@ namespace Paperless_Meeting.Tests.UnitTests
             {
                 DocumentId = 100,
                 MeetingId = 10,
-                DocumentName = "Financial_Report_Q4.pdf",
+                FileName = "Financial_Report_Q4.pdf",
                 FilePath = "uploads/documents/guid_Financial_Report_Q4.pdf",
                 UploadedBy = 2,
-                UploadedAt = DateTime.UtcNow,
-                IsSecret = true
+                UploadDate = DateTime.UtcNow,
+                Visibility = Document.DocumentVisibility.NoiBo
             });
 
             await context.SaveChangesAsync();

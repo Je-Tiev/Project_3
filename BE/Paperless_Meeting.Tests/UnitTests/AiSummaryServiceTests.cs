@@ -47,7 +47,7 @@ namespace Paperless_Meeting.Tests.UnitTests
                 CreatedByUserId = 1,
                 StartTime = DateTime.UtcNow,
                 EndTime = DateTime.UtcNow.AddHours(2),
-                CreatedAt = DateTime.UtcNow
+                Location = "Phòng Hội Nghị 2026"
             };
             context.Meetings.Add(meeting);
 

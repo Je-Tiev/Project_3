@@ -55,8 +55,8 @@ namespace Paperless_Meeting.Tests.UnitTests
                 CreatedByUserId = 1,
                 StartTime = DateTime.UtcNow.AddHours(-1),
                 EndTime = DateTime.UtcNow.AddHours(2),
-                Status = Meeting.MeetingStatus.Ongoing,
-                CreatedAt = DateTime.UtcNow
+                Status = Meeting.MeetingStatus.InProgress,
+                Location = "Phòng Hội Nghị"
             });
 
             await context.SaveChangesAsync();

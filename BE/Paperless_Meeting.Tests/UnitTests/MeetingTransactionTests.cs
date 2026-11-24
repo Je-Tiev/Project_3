@@ -37,7 +37,6 @@ namespace Paperless_Meeting.Tests.UnitTests
 
         private async Task SeedBaseDataAsync(PaperlessMeetingDbContext context)
         {
-            context.Departments.Add(new Department { DepartmentId = 1, DepartmentName = "Kế toán" });
             context.Users.Add(new User
             {
                 UserId = 10,

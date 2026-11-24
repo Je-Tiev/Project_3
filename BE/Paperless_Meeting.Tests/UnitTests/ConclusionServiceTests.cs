@@ -47,6 +47,18 @@ namespace Paperless_Meeting.Tests.UnitTests
         {
             // Arrange
             using var context = CreateInMemoryDbContext();
+            context.Users.Add(new User
+            {
+                UserId = 1,
+                Username = "chairman",
+                FullName = "Chủ tịch Hội đồng",
+                Email = "chairman@hust.edu.vn",
+                PasswordHash = "hashed",
+                DepartmentId = 1,
+                Role = User.UserRole.User
+            });
+            await context.SaveChangesAsync();
+
             var service = new ConclusionService(context);
 
             await service.UpsertConclusionAsync(meetingId: 2, userId: 1, new ConclusionUpsertDto
